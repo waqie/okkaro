@@ -11,12 +11,17 @@ export const routeMinRank = {
   '/general-ledger': 2,
   '/accounts': 2,
   '/insights': 2,
-  '/pricing': 2,
   '/store-manage': 3,
   '/assistant': 3,
 }
 
+// Features that belong ONLY to specific plans (not part of the rank ladder).
+export const routeExclusive = {
+  '/pricing': ['ecommerce'],  // Pricing Calculator = E-commerce plan only
+}
+
 export function routeAllowed(plan, to) {
+  if (routeExclusive[to]) return routeExclusive[to].includes(plan)
   const need = routeMinRank[to] || 1
   return (planRank[plan] || 3) >= need
 }

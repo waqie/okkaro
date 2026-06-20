@@ -19,10 +19,10 @@ const features = [
 ]
 
 const plans = [
-  { name: 'Trial', price: 'Free', period: '14 days', features: ['All features', '1 user', 'No card needed'], highlight: false },
   { name: 'Basic', price: 'Rs. 1,500', period: '/month', features: ['Invoicing', '2 users', 'WhatsApp invoices'], highlight: false },
-  { name: 'Standard', price: 'Rs. 2,500', period: '/month', features: ['Invoicing + Inventory', '5 users', 'Reports'], highlight: true },
-  { name: 'Pro', price: 'Rs. 4,000', period: '/month', features: ['Everything', 'Unlimited users', 'POS + Online Store + AI'], highlight: false },
+  { name: 'Standard', price: 'Rs. 2,500', period: '/month', features: ['Invoicing + Inventory', '5 users', 'Reports'], highlight: false },
+  { name: 'Pro', price: 'Rs. 4,000', period: '/month', features: ['Everything', 'Unlimited users', 'POS + Online Store + AI'], highlight: true },
+  { name: 'E-commerce', price: 'Rs. 3,500', period: '/month', features: ['Pricing & Profit Calculator', 'Multi-currency costing', 'For dropshipping / private label', 'Full accounting'], highlight: false },
 ]
 
 export default function Landing() {
