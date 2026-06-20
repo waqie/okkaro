@@ -13,17 +13,58 @@ const blank = {
   marketplace_fee_pct: '', payment_fee_pct: '', margin_pct: '30',
 }
 
+const CURRENCIES = ['PKR', 'USD', 'CNY', 'AED', 'SAR', 'GBP', 'EUR', 'INR', 'TRY']
+
+// Defined OUTSIDE the page so inputs don't remount (keeps focus while typing).
+function In({ label, value, onChange, type = 'number', suffix }) {
+  return (
+    <div>
+      <label className="label">{label}</label>
+      <div className="relative">
+        <input type={type} className="input" value={value} onChange={(e) => onChange(e.target.value)} />
+        {suffix && <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{suffix}</span>}
+      </div>
+    </div>
+  )
+}
+
+function Cur({ label, value, onChange }) {
+  return (
+    <div>
+      <label className="label">{label}</label>
+      <select className="input" value={value} onChange={(e) => onChange(e.target.value)}>
+        {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+      </select>
+    </div>
+  )
+}
+
 export default function Pricing() {
   const { t } = useT()
   const [f, setF] = useState(blank)
   const [list, setList] = useState([])
+  const [fx, setFx] = useState('')
 
   const fetchList = () => api.get('/api/ecommerce/listings/').then(r => setList(r.data.results || r.data)).catch(() => {})
   useEffect(() => { fetchList() }, [])
 
   const set = (k, v) => setF(p => ({ ...p, [k]: v }))
 
-  // live calculation (same formula as backend)
+  // auto exchange rate when currencies change
+  useEffect(() => {
+    if (f.buy_currency === f.sell_currency) { setF(p => ({ ...p, exchange_rate: '1' })); setFx('same'); return }
+    setFx('loading')
+    fetch(`https://open.er-api.com/v6/latest/${f.buy_currency}`)
+      .then(r => r.json())
+      .then(d => {
+        const rate = d?.rates?.[f.sell_currency]
+        if (rate) { setF(p => ({ ...p, exchange_rate: String(Number(rate).toFixed(2)) })); setFx('ok') }
+        else setFx('manual')
+      })
+      .catch(() => setFx('manual'))
+    // eslint-disable-next-line
+  }, [f.buy_currency, f.sell_currency])
+
   const base = n(f.buy_cost) * n(f.exchange_rate) + n(f.shipping) + n(f.ads_cost) + n(f.packaging)
   const pct = (n(f.marketplace_fee_pct) + n(f.payment_fee_pct) + n(f.margin_pct)) / 100
   const price = pct < 1 && pct >= 0 ? base / (1 - pct) : base
@@ -33,31 +74,26 @@ export default function Pricing() {
 
   const save = async (e) => {
     e.preventDefault()
-    try { await api.post('/api/ecommerce/listings/', f); toast.success(t('listing_saved')); setF(blank); fetchList() }
-    catch { toast.error('Error') }
+    if (!f.title.trim()) { toast.error('Product/Listing name likhein'); return }
+    const payload = {
+      title: f.title, sku: f.sku, buy_currency: f.buy_currency, sell_currency: f.sell_currency,
+      buy_cost: n(f.buy_cost), exchange_rate: n(f.exchange_rate) || 1,
+      shipping: n(f.shipping), ads_cost: n(f.ads_cost), packaging: n(f.packaging),
+      marketplace_fee_pct: n(f.marketplace_fee_pct), payment_fee_pct: n(f.payment_fee_pct), margin_pct: n(f.margin_pct),
+    }
+    try { await api.post('/api/ecommerce/listings/', payload); toast.success(t('listing_saved')); setF(blank); fetchList() }
+    catch (err) { toast.error(err.response?.data ? JSON.stringify(err.response.data).slice(0, 120) : 'Error') }
   }
 
   const toInventory = async (l) => {
     try {
       await api.post('/api/inventory/products/', {
-        name: l.title, sku: l.sku || '',
-        sale_price: l.recommended_price, purchase_price: l.landing_cost,
-        current_stock: 0, unit: 'pcs',
+        name: l.title, sku: l.sku || '', sale_price: l.recommended_price,
+        purchase_price: l.landing_cost, current_stock: 0, unit: 'pcs',
       })
-      toast.success('Added to Inventory — ab POS/Invoice se becho, accounting mein chala jayega')
+      toast.success('Added to Inventory — ab POS/Invoice se becho')
     } catch { toast.error('Error (shayad pehle se hai)') }
   }
-
-  const Field = ({ k, label, suffix, w = '' }) => (
-    <div className={w}>
-      <label className="label">{label}</label>
-      <div className="relative">
-        <input type={k === 'title' || k === 'sku' || k === 'buy_currency' || k === 'sell_currency' ? 'text' : 'number'}
-          className="input" value={f[k]} onChange={e => set(k, e.target.value)} />
-        {suffix && <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{suffix}</span>}
-      </div>
-    </div>
-  )
 
   return (
     <div className="space-y-6">
@@ -67,32 +103,33 @@ export default function Pricing() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Inputs */}
         <form onSubmit={save} className="lg:col-span-2 card space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <Field k="title" label="Product / Listing" />
-            <Field k="sku" label="SKU (optional)" />
+            <In label="Product / Listing" type="text" value={f.title} onChange={v => set('title', v)} />
+            <In label="SKU (optional)" type="text" value={f.sku} onChange={v => set('sku', v)} />
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <Field k="buy_currency" label="Buy Currency" />
-            <Field k="buy_cost" label="Product Cost" />
-            <Field k="exchange_rate" label="Exchange Rate" suffix={`→${f.sell_currency}`} />
+            <Cur label="Buy Currency" value={f.buy_currency} onChange={v => set('buy_currency', v)} />
+            <In label="Product Cost" value={f.buy_cost} onChange={v => set('buy_cost', v)} />
+            <In label="Rate (auto)" value={f.exchange_rate} onChange={v => set('exchange_rate', v)} suffix={`→${f.sell_currency}`} />
+          </div>
+          <p className="text-xs text-gray-400 -mt-2">
+            {fx === 'loading' ? 'Rate laa rahe hain…' : fx === 'ok' ? `Auto rate: 1 ${f.buy_currency} = ${f.exchange_rate} ${f.sell_currency} (edit kar sakte hain)` : fx === 'same' ? '' : fx === 'manual' ? 'Auto rate na mila — khud likhein' : ''}
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            <In label="Shipping" value={f.shipping} onChange={v => set('shipping', v)} />
+            <In label="Ads / unit" value={f.ads_cost} onChange={v => set('ads_cost', v)} />
+            <In label="Packaging" value={f.packaging} onChange={v => set('packaging', v)} />
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <Field k="shipping" label="Shipping" />
-            <Field k="ads_cost" label="Ads / unit" />
-            <Field k="packaging" label="Packaging" />
+            <In label="Marketplace Fee" value={f.marketplace_fee_pct} onChange={v => set('marketplace_fee_pct', v)} suffix="%" />
+            <In label="Payment Fee" value={f.payment_fee_pct} onChange={v => set('payment_fee_pct', v)} suffix="%" />
+            <In label="Desired Margin" value={f.margin_pct} onChange={v => set('margin_pct', v)} suffix="%" />
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Field k="marketplace_fee_pct" label="Marketplace Fee" suffix="%" />
-            <Field k="payment_fee_pct" label="Payment Fee" suffix="%" />
-            <Field k="margin_pct" label="Desired Margin" suffix="%" />
-          </div>
-          <Field k="sell_currency" label="Sell Currency" w="w-32" />
+          <Cur label="Sell Currency" value={f.sell_currency} onChange={v => set('sell_currency', v)} />
           <button type="submit" className="btn-primary"><Save size={15} /> Save Listing</button>
         </form>
 
-        {/* Live result */}
         <div className="card bg-gradient-to-br from-primary-700 to-primary-950 text-white h-fit lg:sticky lg:top-4">
           <p className="text-primary-200 text-sm">Recommended Selling Price</p>
           <p className="text-4xl font-extrabold mt-1">{money(price)}</p>
@@ -105,7 +142,6 @@ export default function Pricing() {
         </div>
       </div>
 
-      {/* Saved listings */}
       <div>
         <h3 className="font-semibold text-gray-900 mb-3">{t('saved_listings')}</h3>
         <div className="card p-0 overflow-x-auto">
