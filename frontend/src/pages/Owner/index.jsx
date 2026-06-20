@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Building2, Plus } from 'lucide-react'
+import { Building2, Plus, Trash2, KeyRound, MessageCircle } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
+import { openWhatsApp } from '../../utils/whatsapp'
+
+const APP_URL = 'https://okkaro.vercel.app'
+const welcomeMsg = (biz, user, pass) =>
+  `Assalam o Alaikum ${biz}!\nAap ka OKKARO account tayar hai.\n\nApp: ${APP_URL}\nUsername: ${user}\nPassword: ${pass}\n\nLogin karke business shuru karein. Shukriya! — OKKARO`
 
 export default function Owner() {
   const { t } = useT()
@@ -20,11 +25,27 @@ export default function Owner() {
     try {
       await api.post('/api/owner/businesses/', form)
       toast.success(t('business_created'), { duration: 6000 })
+      // auto-open WhatsApp welcome with login details
+      if (form.phone) openWhatsApp(form.phone, welcomeMsg(form.business_name, form.username, form.password))
       setShow(false)
       setForm({ business_name: '', owner_name: '', phone: '', city: '', plan: 'trial', username: '', password: '' })
       fetchRows()
     } catch (err) { toast.error(err.response?.data?.error || 'Error') }
     finally { setSaving(false) }
+  }
+
+  const delBusiness = async (b) => {
+    if (!confirm(`Delete "${b.business_name}"? Yeh business aur uska saara data hamesha ke liye mit jaayega.`)) return
+    try { await api.delete(`/api/owner/businesses/${b.id}/`); toast.success('Deleted'); fetchRows() }
+    catch (err) { toast.error(err.response?.data?.error || 'Error') }
+  }
+
+  const resetPw = async (b) => {
+    const pw = prompt(`"${b.business_name}" ka naya password (6+ characters):`)
+    if (!pw) return
+    if (pw.length < 6) { toast.error('Password 6+ characters'); return }
+    try { await api.patch(`/api/owner/businesses/${b.id}/`, { password: pw }); toast.success('Password updated') }
+    catch (err) { toast.error(err.response?.data?.error || 'Error') }
   }
 
   const setPlan = async (id, plan) => {
@@ -47,11 +68,11 @@ export default function Owner() {
       <div className="card p-0 overflow-x-auto">
         <table className="w-full text-sm min-w-[720px]">
           <thead className="bg-gray-50 border-b border-gray-100">
-            <tr>{[t('business_name_l'), t('phone_l'), t('city_l'), 'Plan', t('th_status'), t('col_joined')].map((h, i) => <th key={i} className="text-start px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>)}</tr>
+            <tr>{[t('business_name_l'), t('phone_l'), t('city_l'), 'Plan', t('th_status'), t('col_joined'), t('th_actions')].map((h, i) => <th key={i} className="text-start px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>)}</tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {rows.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-12 text-gray-400"><Building2 size={40} className="mx-auto mb-2 opacity-30" />{t('no_businesses')}</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-gray-400"><Building2 size={40} className="mx-auto mb-2 opacity-30" />{t('no_businesses')}</td></tr>
             ) : rows.map(b => (
               <tr key={b.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-900">{b.business_name || b.name}</td>
@@ -67,6 +88,13 @@ export default function Owner() {
                 </td>
                 <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 capitalize">{b.status}</span></td>
                 <td className="px-4 py-3 text-gray-500">{b.created_on}</td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-1">
+                    {b.phone && <button title="WhatsApp" onClick={() => openWhatsApp(b.phone, `Assalam o Alaikum ${b.business_name}! OKKARO: ${APP_URL}`)} className="p-1.5 hover:bg-green-50 rounded text-green-600"><MessageCircle size={15} /></button>}
+                    <button title="Reset password" onClick={() => resetPw(b)} className="p-1.5 hover:bg-blue-50 rounded text-blue-600"><KeyRound size={15} /></button>
+                    {b.schema !== 'demo' && <button title="Delete" onClick={() => delBusiness(b)} className="p-1.5 hover:bg-red-50 rounded text-red-500"><Trash2 size={15} /></button>}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

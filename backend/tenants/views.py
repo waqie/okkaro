@@ -119,4 +119,30 @@ class OwnerBusinessesView(APIView):
             if f in request.data:
                 setattr(t, f, request.data[f])
         t.save()
+        # optional: reset the business owner's login password
+        new_pw = request.data.get('password')
+        if new_pw and len(new_pw) >= 6:
+            from django.contrib.auth import get_user_model
+            U = get_user_model()
+            for u in U.objects.filter(tenant_schema=t.schema_name):
+                u.set_password(new_pw)
+                u.save()
         return Response({'id': t.id, 'plan': t.plan, 'status': t.status})
+
+    def delete(self, request, pk):
+        if not _is_owner(request):
+            return Response({'error': 'forbidden'}, status=403)
+        t = Tenant.objects.filter(id=pk).first()
+        if not t:
+            return Response({'error': 'not found'}, status=404)
+        if t.schema_name in ('public', 'demo'):
+            return Response({'error': 'cannot delete this business'}, status=400)
+        schema = t.schema_name
+        from django.contrib.auth import get_user_model
+        U = get_user_model()
+        U.objects.filter(tenant_schema=schema).delete()
+        connection.set_schema_to_public()
+        with connection.cursor() as c:
+            c.execute(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE')
+        t.delete()
+        return Response({'deleted': True})
