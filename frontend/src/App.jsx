@@ -25,6 +25,7 @@ import Reminders from './pages/Reminders'
 import Assistant from './pages/Assistant'
 import DayReport from './pages/DayReport'
 import Owner from './pages/Owner'
+import Pricing from './pages/Pricing'
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
@@ -69,6 +70,7 @@ export default function App() {
                 <Route path="/general-ledger" element={<Gated to="/general-ledger"><GeneralLedger /></Gated>} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/insights" element={<Gated to="/insights"><Insights /></Gated>} />
+                <Route path="/pricing" element={<Gated to="/pricing"><Pricing /></Gated>} />
                 <Route path="/store-manage" element={<Gated to="/store-manage"><StoreManage /></Gated>} />
                 <Route path="/assistant" element={<Gated to="/assistant"><Assistant /></Gated>} />
                 <Route path="/settings" element={<SettingsPage />} />

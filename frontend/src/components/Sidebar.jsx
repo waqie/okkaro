@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, ShoppingCart, FileText, FileCheck, Package, Users, BarChart2, Settings, LogOut, Globe, Wallet, BookOpen, Library, LineChart, Store, BellRing, Sparkles, CalendarDays, BookText, ScrollText, Building2 } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, FileText, FileCheck, Package, Users, BarChart2, Settings, LogOut, Globe, Wallet, BookOpen, Library, LineChart, Store, BellRing, Sparkles, CalendarDays, BookText, ScrollText, Building2, Calculator } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { routeAllowed } from '../plan'
 import { useT } from '../i18n'
@@ -24,6 +24,7 @@ export default function Sidebar({ onNavigate }) {
     { to: '/general-ledger', icon: ScrollText, label: t('nav_gl') },
     { to: '/reports', icon: BarChart2, label: t('reports') },
     { to: '/insights', icon: LineChart, label: t('nav_insights') },
+    { to: '/pricing', icon: Calculator, label: t('nav_pricing') },
     { to: '/assistant', icon: Sparkles, label: t('nav_assistant') },
     { to: '/store-manage', icon: Store, label: t('nav_store') },
     { to: '/accounts', icon: Library, label: t('nav_accounts') },

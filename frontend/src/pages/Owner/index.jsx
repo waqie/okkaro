@@ -87,6 +87,7 @@ export default function Owner() {
                     <option value="basic">Basic</option>
                     <option value="standard">Standard</option>
                     <option value="pro">Pro</option>
+                    <option value="ecommerce">E-commerce</option>
                   </select>
                 </td>
                 <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 capitalize">{b.status}</span></td>
@@ -123,6 +124,7 @@ export default function Owner() {
                   <select className="input" value={form.plan} onChange={e => setForm({ ...form, plan: e.target.value })}>
                     <option value="trial">Trial</option><option value="basic">Basic</option>
                     <option value="standard">Standard</option><option value="pro">Pro</option>
+                    <option value="ecommerce">E-commerce</option>
                   </select>
                 </div>
               </div>

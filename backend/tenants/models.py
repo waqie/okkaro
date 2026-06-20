@@ -3,9 +3,11 @@ from django_tenants.models import TenantMixin, DomainMixin
 
 class Tenant(TenantMixin):
     PLAN_CHOICES = [
+        ('trial', 'Trial'),
         ('basic', 'Basic'),
         ('standard', 'Standard'),
         ('pro', 'Pro'),
+        ('ecommerce', 'E-commerce'),
     ]
     STATUS_CHOICES = [
         ('active', 'Active'),

@@ -228,6 +228,8 @@ const translations = {
     add_business: 'Add Business', owner_name_l: 'Owner Name',
     username_l: 'Username (for login)', password_l: 'Password',
     business_created: 'Business created! Share the login with the customer.',
+    nav_pricing: 'Pricing Calc', pricing_subtitle: 'Set selling price & profit — no Excel needed',
+    saved_listings: 'Saved Listings', listing_saved: 'Listing saved!',
     // day report + aging
     nav_day: 'Day Report', day_subtitle: "A complete picture of any day",
     d_sales: 'Sales', d_purchases: 'Purchases', d_payments: 'Payments Received',
@@ -470,6 +472,8 @@ const translations = {
     add_business: 'نیا بزنس', owner_name_l: 'مالک کا نام',
     username_l: 'یوزر نیم (لاگ اِن کے لیے)', password_l: 'پاس ورڈ',
     business_created: 'بزنس بن گیا! لاگ اِن کسٹمر کو دے دیں۔',
+    nav_pricing: 'پرائسنگ', pricing_subtitle: 'فروخت قیمت اور منافع — Excel کی ضرورت نہیں',
+    saved_listings: 'محفوظ لسٹنگز', listing_saved: 'لسٹنگ محفوظ ہو گئی!',
     // day report + aging
     nav_day: 'روزانہ رپورٹ', day_subtitle: 'کسی بھی دن کی مکمل تصویر',
     d_sales: 'فروخت', d_purchases: 'خریداری', d_payments: 'وصول شدہ رقم',
