@@ -76,6 +76,7 @@ DATABASES = {
         'PASSWORD': os.environ.get('DB_PASSWORD') or os.environ.get('PGPASSWORD', 'postgres'),
         'HOST': os.environ.get('DB_HOST') or os.environ.get('PGHOST', 'localhost'),
         'PORT': os.environ.get('DB_PORT') or os.environ.get('PGPORT', '5432'),
+        'OPTIONS': {'sslmode': os.environ.get('DB_SSLMODE', 'prefer')},
     }
 }
 

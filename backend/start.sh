@@ -4,4 +4,4 @@ set -e
 python manage.py collectstatic --noinput
 python manage.py migrate_schemas --shared
 python manage.py migrate_schemas || true
-gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 120
+gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120
