@@ -11,25 +11,27 @@ class PricedListingViewSet(viewsets.ModelViewSet):
 
     def _sync_product(self, listing):
         """Auto-create/update an inventory product from the listing so it flows
-        into the rest of the system (POS, invoicing → ledger)."""
+        into the rest of the system (POS, invoicing → ledger). Isolated so it can
+        never break the listing save."""
+        from django.db import transaction
         try:
-            from inventory.models import Product
-            prod = None
-            if listing.sku:
-                prod = Product.objects.filter(sku=listing.sku).first()
-            if not prod:
-                prod = Product.objects.filter(name=listing.title).first()
-            if prod:
-                prod.sale_price = listing.recommended_price
-                prod.purchase_price = listing.landing_cost
-                prod.save()
-            else:
-                Product.objects.create(
-                    name=listing.title, sku=listing.sku or '',
-                    sale_price=listing.recommended_price,
-                    purchase_price=listing.landing_cost,
-                    current_stock=listing.stock or 0,
-                )
+            with transaction.atomic():
+                from inventory.models import Product
+                sku = listing.sku or f'ECO-{listing.id}'  # unique per listing (SKU is unique)
+                prod = Product.objects.filter(sku=sku).first()
+                if not prod and listing.sku:
+                    prod = Product.objects.filter(name=listing.title).first()
+                if prod:
+                    prod.sale_price = listing.recommended_price
+                    prod.purchase_price = listing.landing_cost
+                    prod.save()
+                else:
+                    Product.objects.create(
+                        name=listing.title, sku=sku,
+                        sale_price=listing.recommended_price,
+                        purchase_price=listing.landing_cost,
+                        current_stock=listing.stock or 0,
+                    )
         except Exception:
             pass
 
