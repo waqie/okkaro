@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, ShoppingCart, FileText, FileCheck, Package, Users, BarChart2, Settings, LogOut, Globe, Wallet, BookOpen, Library, LineChart, Store, BellRing, Sparkles, CalendarDays, BookText, ScrollText } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, FileText, FileCheck, Package, Users, BarChart2, Settings, LogOut, Globe, Wallet, BookOpen, Library, LineChart, Store, BellRing, Sparkles, CalendarDays, BookText, ScrollText, Building2 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { routeAllowed } from '../plan'
 import { useT } from '../i18n'
@@ -31,6 +31,7 @@ export default function Sidebar({ onNavigate }) {
   ]
 
   const navItems = allNavItems.filter((i) => routeAllowed(plan, i.to))
+  if (user?.is_superuser) navItems.push({ to: '/owner', icon: Building2, label: t('nav_owner') })
 
   const handleLogout = () => { logout(); navigate('/login') }
 

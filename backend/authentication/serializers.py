@@ -17,9 +17,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 
-                  'phone', 'role', 'avatar', 'date_joined']
-        read_only_fields = ['date_joined']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name',
+                  'phone', 'role', 'avatar', 'date_joined', 'is_superuser']
+        read_only_fields = ['date_joined', 'is_superuser']
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)

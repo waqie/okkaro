@@ -3,13 +3,15 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from inventory.public import ShopInfoView, StoreProductsView
-from tenants.views import BusinessProfileView
+from tenants.views import BusinessProfileView, OwnerBusinessesView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/store/info/', ShopInfoView.as_view()),
     path('api/store/products/', StoreProductsView.as_view()),
     path('api/business/', BusinessProfileView.as_view()),
+    path('api/owner/businesses/', OwnerBusinessesView.as_view()),
+    path('api/owner/businesses/<int:pk>/', OwnerBusinessesView.as_view()),
     path('api/auth/', include('authentication.urls')),
     path('api/invoicing/', include('invoicing.urls')),
     path('api/inventory/', include('inventory.urls')),
