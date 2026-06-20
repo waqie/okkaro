@@ -52,7 +52,7 @@ class OwnerBusinessesView(APIView):
         """Create a new business (tenant) + its owner login."""
         if not _is_owner(request):
             return Response({'error': 'forbidden'}, status=403)
-        import re
+        import re, traceback
         from django.contrib.auth import get_user_model
         from django_tenants.utils import schema_context
         from accounting.services import seed_default_accounts
@@ -63,6 +63,10 @@ class OwnerBusinessesView(APIView):
         password = d.get('password') or ''
         if not business_name or not username or len(password) < 6:
             return Response({'error': 'business_name, username, and password (6+) required'}, status=400)
+
+        # tenant creation must run from the PUBLIC schema (JWT middleware may have
+        # set us to another business's schema).
+        connection.set_schema_to_public()
 
         User = get_user_model()
         if User.objects.filter(username=username).exists():
@@ -81,22 +85,26 @@ class OwnerBusinessesView(APIView):
         if Tenant.objects.filter(email=email).exists():
             email = f"{schema}@okkaro.app"
 
-        tenant = Tenant(
-            schema_name=schema, business_name=business_name,
-            name=d.get('owner_name') or business_name, email=email,
-            phone=d.get('phone', ''), city=d.get('city', ''),
-            plan=d.get('plan', 'trial'), status='trial',
-        )
-        tenant.save()  # auto_create_schema → creates schema + runs tenant migrations
+        try:
+            tenant = Tenant(
+                schema_name=schema, business_name=business_name,
+                name=d.get('owner_name') or business_name, email=email,
+                phone=d.get('phone', ''), city=d.get('city', ''),
+                plan=d.get('plan', 'trial'), status='trial',
+            )
+            tenant.save()  # auto_create_schema → creates schema + runs tenant migrations
 
-        with schema_context(schema):
-            seed_default_accounts()
+            with schema_context(schema):
+                seed_default_accounts()
 
-        User.objects.create_user(
-            username=username, password=password, role='owner',
-            tenant_schema=schema, first_name=d.get('owner_name', ''),
-            phone=d.get('phone', ''), email=email,
-        )
+            User.objects.create_user(
+                username=username, password=password, role='owner',
+                tenant_schema=schema, first_name=d.get('owner_name', ''),
+                phone=d.get('phone', ''), email=email,
+            )
+        except Exception as e:
+            traceback.print_exc()
+            return Response({'error': f'{type(e).__name__}: {e}'}, status=400)
 
         return Response({'id': tenant.id, 'schema': schema, 'business_name': business_name,
                          'username': username, 'plan': tenant.plan}, status=201)
