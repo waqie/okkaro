@@ -221,6 +221,8 @@ const translations = {
     // dashboard hero
     dash_hello: 'Assalam o Alaikum', quick_actions: 'Quick Actions',
     q_new_sale: 'New Sale', q_add_product: 'Add Product',
+    locked_title: 'This feature is in a higher plan',
+    locked_desc: 'Upgrade your plan to unlock this feature.',
     // day report + aging
     nav_day: 'Day Report', day_subtitle: "A complete picture of any day",
     d_sales: 'Sales', d_purchases: 'Purchases', d_payments: 'Payments Received',
@@ -456,6 +458,8 @@ const translations = {
     // dashboard hero
     dash_hello: 'السلام علیکم', quick_actions: 'فوری کام',
     q_new_sale: 'نئی سیل', q_add_product: 'پروڈکٹ شامل کریں',
+    locked_title: 'یہ فیچر اوپر والے پلان میں ہے',
+    locked_desc: 'اس فیچر کے لیے اپنا پلان اپ گریڈ کریں۔',
     // day report + aging
     nav_day: 'روزانہ رپورٹ', day_subtitle: 'کسی بھی دن کی مکمل تصویر',
     d_sales: 'فروخت', d_purchases: 'خریداری', d_payments: 'وصول شدہ رقم',

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
+import { routeAllowed } from './plan'
 import { useT } from './i18n'
 import Layout from './components/Layout'
 import Login from './pages/Auth/Login'
@@ -29,12 +30,14 @@ function PrivateRoute({ children }) {
   return isAuthenticated ? children : <Navigate to="/welcome" />
 }
 
-function ComingSoon({ titleKey }) {
+function Gated({ to, children }) {
+  const { plan } = useAuthStore()
   const { t } = useT()
+  if (routeAllowed(plan, to)) return children
   return (
-    <div className="card">
-      <h1 className="text-2xl font-bold">{t(titleKey)}</h1>
-      <p className="text-gray-500 mt-2">{t('coming_soon')}</p>
+    <div className="card max-w-md">
+      <h1 className="text-xl font-bold text-gray-900">🔒 {t('locked_title')}</h1>
+      <p className="text-gray-500 mt-2">{t('locked_desc')}</p>
     </div>
   )
 }
@@ -51,22 +54,22 @@ export default function App() {
             <Layout>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
-                <Route path="/pos" element={<POS />} />
+                <Route path="/pos" element={<Gated to="/pos"><POS /></Gated>} />
                 <Route path="/day" element={<DayReport />} />
                 <Route path="/invoices" element={<Invoicing />} />
                 <Route path="/quotations" element={<Quotations />} />
-                <Route path="/inventory" element={<Inventory />} />
+                <Route path="/inventory" element={<Gated to="/inventory"><Inventory /></Gated>} />
                 <Route path="/parties" element={<Parties />} />
                 <Route path="/reminders" element={<Reminders />} />
-                <Route path="/expenses" element={<Expenses />} />
+                <Route path="/expenses" element={<Gated to="/expenses"><Expenses /></Gated>} />
                 <Route path="/khata" element={<Ledger />} />
-                <Route path="/accounts" element={<ChartOfAccounts />} />
-                <Route path="/vouchers" element={<Vouchers />} />
-                <Route path="/general-ledger" element={<GeneralLedger />} />
+                <Route path="/accounts" element={<Gated to="/accounts"><ChartOfAccounts /></Gated>} />
+                <Route path="/vouchers" element={<Gated to="/vouchers"><Vouchers /></Gated>} />
+                <Route path="/general-ledger" element={<Gated to="/general-ledger"><GeneralLedger /></Gated>} />
                 <Route path="/reports" element={<Reports />} />
-                <Route path="/insights" element={<Insights />} />
-                <Route path="/store-manage" element={<StoreManage />} />
-                <Route path="/assistant" element={<Assistant />} />
+                <Route path="/insights" element={<Gated to="/insights"><Insights /></Gated>} />
+                <Route path="/store-manage" element={<Gated to="/store-manage"><StoreManage /></Gated>} />
+                <Route path="/assistant" element={<Gated to="/assistant"><Assistant /></Gated>} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Routes>
             </Layout>

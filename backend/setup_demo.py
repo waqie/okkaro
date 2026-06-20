@@ -11,6 +11,10 @@ with schema_context('demo'):
 
     seed_default_accounts()
 
+    if Invoice.objects.exists():
+        print('>>> Demo data already present — skipping seed')
+        raise SystemExit
+
     # Customers
     parties = []
     for nm in ['Ali Traders', 'Khan Store', 'Bismillah Mart', 'Hassan & Sons', 'City Cash & Carry']:

@@ -1,14 +1,15 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, ShoppingCart, FileText, FileCheck, Package, Users, BarChart2, Settings, LogOut, Globe, Wallet, BookOpen, Library, LineChart, Store, BellRing, Sparkles, CalendarDays, BookText, ScrollText } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { routeAllowed } from '../plan'
 import { useT } from '../i18n'
 
 export default function Sidebar({ onNavigate }) {
-  const { user, logout } = useAuthStore()
+  const { user, logout, plan } = useAuthStore()
   const { t, toggle } = useT()
   const navigate = useNavigate()
 
-  const navItems = [
+  const allNavItems = [
     { to: '/', icon: LayoutDashboard, label: t('dashboard') },
     { to: '/day', icon: CalendarDays, label: t('nav_day') },
     { to: '/pos', icon: ShoppingCart, label: t('nav_pos') },
@@ -28,6 +29,8 @@ export default function Sidebar({ onNavigate }) {
     { to: '/accounts', icon: Library, label: t('nav_accounts') },
     { to: '/settings', icon: Settings, label: t('settings') },
   ]
+
+  const navItems = allNavItems.filter((i) => routeAllowed(plan, i.to))
 
   const handleLogout = () => { logout(); navigate('/login') }
 
