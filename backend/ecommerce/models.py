@@ -11,6 +11,7 @@ class PricedListing(models.Model):
     Replaces the seller's Excel pricing formulas (dropshipping / white-label / private-label)."""
     title = models.CharField(max_length=200)
     sku = models.CharField(max_length=80, blank=True)
+    stock = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # opening quantity
 
     # buying side (may be a different currency)
     buy_currency = models.CharField(max_length=10, default='USD')

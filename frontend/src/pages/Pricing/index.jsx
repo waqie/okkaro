@@ -7,7 +7,7 @@ import { useT } from '../../i18n'
 const n = (v) => parseFloat(v) || 0
 
 const blank = {
-  title: '', sku: '',
+  title: '', sku: '', stock: '',
   buy_currency: 'USD', buy_cost: '', exchange_rate: '280',
   sell_currency: 'PKR', shipping: '', ads_cost: '', packaging: '',
   marketplace_fee_pct: '', payment_fee_pct: '', margin_pct: '30',
@@ -76,7 +76,7 @@ export default function Pricing() {
     e.preventDefault()
     if (!f.title.trim()) { toast.error('Product/Listing name likhein'); return }
     const payload = {
-      title: f.title, sku: f.sku, buy_currency: f.buy_currency, sell_currency: f.sell_currency,
+      title: f.title, sku: f.sku, stock: n(f.stock), buy_currency: f.buy_currency, sell_currency: f.sell_currency,
       buy_cost: n(f.buy_cost), exchange_rate: n(f.exchange_rate) || 1,
       shipping: n(f.shipping), ads_cost: n(f.ads_cost), packaging: n(f.packaging),
       marketplace_fee_pct: n(f.marketplace_fee_pct), payment_fee_pct: n(f.payment_fee_pct), margin_pct: n(f.margin_pct),
@@ -104,9 +104,10 @@ export default function Pricing() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <form onSubmit={save} className="lg:col-span-2 card space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <In label="Product / Listing" type="text" value={f.title} onChange={v => set('title', v)} />
             <In label="SKU (optional)" type="text" value={f.sku} onChange={v => set('sku', v)} />
+            <In label="Stock / Qty" value={f.stock} onChange={v => set('stock', v)} />
           </div>
           <div className="grid grid-cols-3 gap-3">
             <Cur label="Buy Currency" value={f.buy_currency} onChange={v => set('buy_currency', v)} />

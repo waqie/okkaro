@@ -27,7 +27,8 @@ class PricedListingViewSet(viewsets.ModelViewSet):
                 Product.objects.create(
                     name=listing.title, sku=listing.sku or '',
                     sale_price=listing.recommended_price,
-                    purchase_price=listing.landing_cost, current_stock=0,
+                    purchase_price=listing.landing_cost,
+                    current_stock=listing.stock or 0,
                 )
         except Exception:
             pass
