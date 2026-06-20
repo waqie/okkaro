@@ -38,13 +38,17 @@ class OwnerBusinessesView(APIView):
     def get(self, request):
         if not _is_owner(request):
             return Response({'error': 'forbidden'}, status=403)
+        from django.contrib.auth import get_user_model
+        U = get_user_model()
         rows = []
         for t in Tenant.objects.exclude(schema_name='public').order_by('-created_on'):
+            owner = U.objects.filter(tenant_schema=t.schema_name).order_by('id').first()
             rows.append({
                 'id': t.id, 'schema': t.schema_name, 'business_name': t.business_name,
                 'name': t.name, 'email': t.email, 'phone': t.phone,
                 'city': t.city, 'plan': t.plan, 'status': t.status,
                 'created_on': t.created_on,
+                'username': owner.username if owner else '',
             })
         return Response(rows)
 

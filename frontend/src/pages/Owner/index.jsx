@@ -14,6 +14,7 @@ export default function Owner() {
   const [rows, setRows] = useState([])
   const [show, setShow] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [result, setResult] = useState(null)
   const [form, setForm] = useState({ business_name: '', owner_name: '', phone: '', city: '', plan: 'trial', username: '', password: '' })
 
   const fetchRows = () => api.get('/api/owner/businesses/').then(r => setRows(r.data)).catch(() => setRows([]))
@@ -24,9 +25,8 @@ export default function Owner() {
     setSaving(true)
     try {
       await api.post('/api/owner/businesses/', form)
-      toast.success(t('business_created'), { duration: 6000 })
-      // auto-open WhatsApp welcome with login details
-      if (form.phone) openWhatsApp(form.phone, welcomeMsg(form.business_name, form.username, form.password))
+      toast.success(t('business_created'))
+      setResult({ business_name: form.business_name, username: form.username, password: form.password, phone: form.phone })
       setShow(false)
       setForm({ business_name: '', owner_name: '', phone: '', city: '', plan: 'trial', username: '', password: '' })
       fetchRows()
@@ -44,8 +44,11 @@ export default function Owner() {
     const pw = prompt(`"${b.business_name}" ka naya password (6+ characters):`)
     if (!pw) return
     if (pw.length < 6) { toast.error('Password 6+ characters'); return }
-    try { await api.patch(`/api/owner/businesses/${b.id}/`, { password: pw }); toast.success('Password updated') }
-    catch (err) { toast.error(err.response?.data?.error || 'Error') }
+    try {
+      await api.patch(`/api/owner/businesses/${b.id}/`, { password: pw })
+      toast.success('Password updated')
+      setResult({ business_name: b.business_name, username: b.username, password: pw, phone: b.phone })
+    } catch (err) { toast.error(err.response?.data?.error || 'Error') }
   }
 
   const setPlan = async (id, plan) => {
@@ -131,6 +134,31 @@ export default function Owner() {
                 <button type="button" onClick={() => setShow(false)} className="btn-secondary flex-1 justify-center">{t('cancel')}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {result && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="p-6 text-center">
+              <div className="w-12 h-12 mx-auto rounded-full bg-green-100 text-green-600 flex items-center justify-center text-2xl">✓</div>
+              <h2 className="text-lg font-semibold mt-3">{result.business_name}</h2>
+              <div className="text-start bg-gray-50 rounded-xl p-4 mt-4 text-sm space-y-1">
+                <div className="flex justify-between"><span className="text-gray-500">Username</span><span className="font-semibold">{result.username}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Password</span><span className="font-semibold">{result.password}</span></div>
+                {result.phone && <div className="flex justify-between"><span className="text-gray-500">Phone</span><span>{result.phone}</span></div>}
+              </div>
+              <div className="flex gap-2 mt-5">
+                {result.phone && (
+                  <button onClick={() => openWhatsApp(result.phone, welcomeMsg(result.business_name, result.username, result.password))}
+                    className="btn-primary flex-1 justify-center bg-green-600 hover:bg-green-700">
+                    <MessageCircle size={16} /> Send on WhatsApp
+                  </button>
+                )}
+                <button onClick={() => setResult(null)} className="btn-secondary flex-1 justify-center">{t('close')}</button>
+              </div>
+            </div>
           </div>
         </div>
       )}
