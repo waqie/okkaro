@@ -18,6 +18,7 @@ import GeneralLedger from './pages/Accounting/GeneralLedger'
 import Insights from './pages/Insights'
 import Store from './pages/Store'
 import StoreManage from './pages/Store/Manage'
+import Landing from './pages/Landing'
 import SettingsPage from './pages/Settings'
 import Reminders from './pages/Reminders'
 import Assistant from './pages/Assistant'
@@ -25,7 +26,7 @@ import DayReport from './pages/DayReport'
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
-  return isAuthenticated ? children : <Navigate to="/login" />
+  return isAuthenticated ? children : <Navigate to="/welcome" />
 }
 
 function ComingSoon({ titleKey }) {
@@ -42,6 +43,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/welcome" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/store" element={<Store />} />
         <Route path="/*" element={
