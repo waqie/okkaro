@@ -16,7 +16,7 @@ const blank = {
 const CURRENCIES = ['PKR', 'USD', 'CNY', 'AED', 'SAR', 'GBP', 'EUR', 'INR', 'TRY']
 
 // Defined OUTSIDE the page so inputs don't remount (keeps focus while typing).
-function In({ label, value, onChange, type = 'number', suffix }) {
+function In({ label, value, onChange, type = 'number', suffix, hint }) {
   return (
     <div>
       <label className="label">{label}</label>
@@ -24,6 +24,7 @@ function In({ label, value, onChange, type = 'number', suffix }) {
         <input type={type} className="input" value={value} onChange={(e) => onChange(e.target.value)} />
         {suffix && <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{suffix}</span>}
       </div>
+      {hint && <p className="text-[11px] text-gray-400 mt-1 leading-tight">{hint}</p>}
     </div>
   )
 }
@@ -111,34 +112,44 @@ export default function Pricing() {
           </div>
           <div className="grid grid-cols-3 gap-3">
             <Cur label="Buy Currency" value={f.buy_currency} onChange={v => set('buy_currency', v)} />
-            <In label="Product Cost" value={f.buy_cost} onChange={v => set('buy_cost', v)} />
-            <In label="Rate (auto)" value={f.exchange_rate} onChange={v => set('exchange_rate', v)} suffix={`→${f.sell_currency}`} />
+            <In label="Product Cost" value={f.buy_cost} onChange={v => set('buy_cost', v)} hint="Maal kitne ka khareeda (1 piece)" />
+            <In label="Rate (auto)" value={f.exchange_rate} onChange={v => set('exchange_rate', v)} suffix={`→${f.sell_currency}`} hint={`1 ${f.buy_currency} = kitne ${f.sell_currency}`} />
           </div>
           <p className="text-xs text-gray-400 -mt-2">
             {fx === 'loading' ? 'Rate laa rahe hain…' : fx === 'ok' ? `Auto rate: 1 ${f.buy_currency} = ${f.exchange_rate} ${f.sell_currency} (edit kar sakte hain)` : fx === 'same' ? '' : fx === 'manual' ? 'Auto rate na mila — khud likhein' : ''}
           </p>
           <div className="grid grid-cols-3 gap-3">
-            <In label="Shipping" value={f.shipping} onChange={v => set('shipping', v)} />
-            <In label="Ads / unit" value={f.ads_cost} onChange={v => set('ads_cost', v)} />
-            <In label="Packaging" value={f.packaging} onChange={v => set('packaging', v)} />
+            <In label="Shipping" value={f.shipping} onChange={v => set('shipping', v)} hint="Delivery/courier (1 order)" />
+            <In label="Ads / unit" value={f.ads_cost} onChange={v => set('ads_cost', v)} hint="Ek piece par ad kharch. Ads na ho to 0" />
+            <In label="Packaging" value={f.packaging} onChange={v => set('packaging', v)} hint="Box/packing (1 piece)" />
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <In label="Marketplace Fee" value={f.marketplace_fee_pct} onChange={v => set('marketplace_fee_pct', v)} suffix="%" />
-            <In label="Payment Fee" value={f.payment_fee_pct} onChange={v => set('payment_fee_pct', v)} suffix="%" />
-            <In label="Desired Margin" value={f.margin_pct} onChange={v => set('margin_pct', v)} suffix="%" />
+            <In label="Marketplace Fee" value={f.marketplace_fee_pct} onChange={v => set('marketplace_fee_pct', v)} suffix="%" hint="Daraz/Amazon ki fee %. Na ho to 0" />
+            <In label="Payment Fee" value={f.payment_fee_pct} onChange={v => set('payment_fee_pct', v)} suffix="%" hint="Online payment fee %. Na ho to 0" />
+            <In label="Desired Margin" value={f.margin_pct} onChange={v => set('margin_pct', v)} suffix="%" hint="Aap kitna % profit chahte hain" />
           </div>
           <Cur label="Sell Currency" value={f.sell_currency} onChange={v => set('sell_currency', v)} />
           <button type="submit" className="btn-primary"><Save size={15} /> Save Listing</button>
         </form>
 
         <div className="card bg-gradient-to-br from-primary-700 to-primary-950 text-white h-fit lg:sticky lg:top-4">
-          <p className="text-primary-200 text-sm">Recommended Selling Price</p>
+          <p className="text-primary-200 text-sm">Bechne ki qeemat (recommended)</p>
           <p className="text-4xl font-extrabold mt-1">{money(price)}</p>
-          <div className="mt-5 space-y-2 text-sm">
-            <div className="flex justify-between border-t border-white/15 pt-2"><span className="text-primary-200">Landing Cost</span><span>{money(base)}</span></div>
-            <div className="flex justify-between"><span className="text-primary-200">Fees</span><span>{money(fees)}</span></div>
-            <div className="flex justify-between font-bold text-lg border-t border-white/15 pt-2"><span>Profit / unit</span><span className="text-green-300">{money(profit)}</span></div>
-            <div className="flex justify-between"><span className="text-primary-200">Margin</span><span>{price > 0 ? (profit / price * 100).toFixed(1) : 0}%</span></div>
+
+          <p className="text-primary-200 text-xs uppercase mt-5 mb-1">Aap ki laagat</p>
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between"><span className="text-primary-100">Maal (cost × rate)</span><span>{money(n(f.buy_cost) * n(f.exchange_rate))}</span></div>
+            <div className="flex justify-between"><span className="text-primary-100">+ Shipping</span><span>{money(f.shipping)}</span></div>
+            <div className="flex justify-between"><span className="text-primary-100">+ Ads</span><span>{money(f.ads_cost)}</span></div>
+            <div className="flex justify-between"><span className="text-primary-100">+ Packaging</span><span>{money(f.packaging)}</span></div>
+            <div className="flex justify-between font-semibold border-t border-white/15 pt-1"><span>= Total laagat</span><span>{money(base)}</span></div>
+          </div>
+
+          <p className="text-primary-200 text-xs uppercase mt-4 mb-1">Is par</p>
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between"><span className="text-primary-100">Fees (marketplace + payment)</span><span>{money(fees)}</span></div>
+            <div className="flex justify-between text-green-300"><span>Aap ka profit ({n(f.margin_pct)}%)</span><span>{money(profit)}</span></div>
+            <div className="flex justify-between font-bold text-lg border-t border-white/15 pt-1"><span>= Bechne ki qeemat</span><span>{money(price)}</span></div>
           </div>
         </div>
       </div>
