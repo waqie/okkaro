@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Building2 } from 'lucide-react'
+import { Building2, Plus } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
@@ -7,9 +7,25 @@ import { useT } from '../../i18n'
 export default function Owner() {
   const { t } = useT()
   const [rows, setRows] = useState([])
+  const [show, setShow] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({ business_name: '', owner_name: '', phone: '', city: '', plan: 'trial', username: '', password: '' })
 
   const fetchRows = () => api.get('/api/owner/businesses/').then(r => setRows(r.data)).catch(() => setRows([]))
   useEffect(() => { fetchRows() }, [])
+
+  const create = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await api.post('/api/owner/businesses/', form)
+      toast.success(t('business_created'), { duration: 6000 })
+      setShow(false)
+      setForm({ business_name: '', owner_name: '', phone: '', city: '', plan: 'trial', username: '', password: '' })
+      fetchRows()
+    } catch (err) { toast.error(err.response?.data?.error || 'Error') }
+    finally { setSaving(false) }
+  }
 
   const setPlan = async (id, plan) => {
     try { await api.patch(`/api/owner/businesses/${id}/`, { plan }); toast.success('Plan updated'); fetchRows() }
@@ -18,7 +34,10 @@ export default function Owner() {
 
   return (
     <div className="space-y-6">
-      <div><h1 className="text-2xl font-bold text-gray-900">{t('nav_owner')}</h1><p className="text-gray-500 text-sm mt-1">{t('owner_subtitle')}</p></div>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div><h1 className="text-2xl font-bold text-gray-900">{t('nav_owner')}</h1><p className="text-gray-500 text-sm mt-1">{t('owner_subtitle')}</p></div>
+        <button onClick={() => setShow(true)} className="btn-primary"><Plus size={16} /> {t('add_business')}</button>
+      </div>
 
       <div className="card flex items-center justify-between">
         <span className="text-gray-500 flex items-center gap-2"><Building2 size={16} /> Businesses</span>
@@ -53,6 +72,40 @@ export default function Owner() {
           </tbody>
         </table>
       </div>
+
+      {show && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-auto">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-lg font-semibold">{t('add_business')}</h2>
+              <button onClick={() => setShow(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+            </div>
+            <form onSubmit={create} className="p-6 space-y-4">
+              <div><label className="label">{t('business_name_l')}</label><input className="input" value={form.business_name} onChange={e => setForm({ ...form, business_name: e.target.value })} required /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="label">{t('owner_name_l')}</label><input className="input" value={form.owner_name} onChange={e => setForm({ ...form, owner_name: e.target.value })} /></div>
+                <div><label className="label">{t('phone_l')}</label><input className="input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="label">{t('city_l')}</label><input className="input" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} /></div>
+                <div><label className="label">Plan</label>
+                  <select className="input" value={form.plan} onChange={e => setForm({ ...form, plan: e.target.value })}>
+                    <option value="trial">Trial</option><option value="basic">Basic</option>
+                    <option value="standard">Standard</option><option value="pro">Pro</option>
+                  </select>
+                </div>
+              </div>
+              <hr />
+              <div><label className="label">{t('username_l')}</label><input className="input" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} required /></div>
+              <div><label className="label">{t('password_l')}</label><input className="input" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required minLength={6} /></div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center disabled:opacity-60">{saving ? '...' : t('add_business')}</button>
+                <button type="button" onClick={() => setShow(false)} className="btn-secondary flex-1 justify-center">{t('cancel')}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -23,10 +23,14 @@ if host:
 else:
     print('>>> WARNING: APP_DOMAIN not set — set it and re-run, else API returns 404')
 
-if not User.objects.filter(username='admin').exists():
-    User.objects.create_superuser('admin', 'admin@okkaro.app',
-                                  os.environ.get('ADMIN_PASSWORD', 'admin12345'), role='owner')
+admin = User.objects.filter(username='admin').first()
+if not admin:
+    admin = User.objects.create_superuser('admin', 'admin@okkaro.app',
+                                          os.environ.get('ADMIN_PASSWORD', 'admin12345'), role='owner')
     print('>>> Admin created: admin /', os.environ.get('ADMIN_PASSWORD', 'admin12345'))
+# tie the admin to the demo business
+admin.tenant_schema = 'demo'
+admin.save()
 
 with schema_context('demo'):
     seed_default_accounts()

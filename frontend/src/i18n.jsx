@@ -225,6 +225,9 @@ const translations = {
     locked_desc: 'Upgrade your plan to unlock this feature.',
     nav_owner: 'Owner Panel', owner_subtitle: 'All businesses on OKKARO',
     col_joined: 'Joined', no_businesses: 'No businesses yet',
+    add_business: 'Add Business', owner_name_l: 'Owner Name',
+    username_l: 'Username (for login)', password_l: 'Password',
+    business_created: 'Business created! Share the login with the customer.',
     // day report + aging
     nav_day: 'Day Report', day_subtitle: "A complete picture of any day",
     d_sales: 'Sales', d_purchases: 'Purchases', d_payments: 'Payments Received',
@@ -464,6 +467,9 @@ const translations = {
     locked_desc: 'اس فیچر کے لیے اپنا پلان اپ گریڈ کریں۔',
     nav_owner: 'اونر پینل', owner_subtitle: 'OKKARO کے تمام بزنس',
     col_joined: 'شامل ہوا', no_businesses: 'ابھی کوئی بزنس نہیں',
+    add_business: 'نیا بزنس', owner_name_l: 'مالک کا نام',
+    username_l: 'یوزر نیم (لاگ اِن کے لیے)', password_l: 'پاس ورڈ',
+    business_created: 'بزنس بن گیا! لاگ اِن کسٹمر کو دے دیں۔',
     // day report + aging
     nav_day: 'روزانہ رپورٹ', day_subtitle: 'کسی بھی دن کی مکمل تصویر',
     d_sales: 'فروخت', d_purchases: 'خریداری', d_payments: 'وصول شدہ رقم',

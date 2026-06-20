@@ -12,6 +12,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email'] = user.email
         token['role'] = user.role
         token['full_name'] = user.get_full_name()
+        token['tenant'] = getattr(user, 'tenant_schema', '') or ''
         return token
 
 class UserSerializer(serializers.ModelSerializer):

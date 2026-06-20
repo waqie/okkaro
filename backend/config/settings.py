@@ -38,6 +38,7 @@ TENANT_DOMAIN_MODEL = "tenants.Domain"
 
 MIDDLEWARE = [
     'django_tenants.middleware.main.TenantMainMiddleware',
+    'config.tenant_middleware.JWTTenantMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
