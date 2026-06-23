@@ -21,6 +21,7 @@ SHARED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'authentication',
+    'blog',
 ]
 
 TENANT_APPS = [

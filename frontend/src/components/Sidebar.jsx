@@ -34,6 +34,7 @@ export default function Sidebar({ onNavigate }) {
 
   const navItems = allNavItems.filter((i) => routeAllowed(plan, i.to))
   if (user?.is_superuser) navItems.push({ to: '/owner', icon: Building2, label: t('nav_owner') })
+  if (user?.is_superuser) navItems.push({ to: '/blog-admin', icon: ScrollText, label: 'Blog' })
 
   const handleLogout = () => { logout(); navigate('/login') }
 

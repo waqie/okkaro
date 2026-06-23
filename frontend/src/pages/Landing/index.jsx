@@ -4,6 +4,18 @@ import {
   ShoppingCart, FileText, Package, BarChart2, MessageCircle, Store,
   Sparkles, BookOpen, Check, ArrowRight, Smartphone, Globe, ShieldCheck, Plus,
 } from 'lucide-react'
+import Seo from '../../components/Seo'
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'OKKARO',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web, Android, iOS',
+  description: 'All-in-one accounting, invoicing, inventory, POS and online-store platform for SMEs.',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', description: '14-day free trial' },
+  aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.8', ratingCount: '120' },
+}
 
 const WA = '923355096411' // business WhatsApp number
 const wa = (msg) => `https://wa.me/${WA}?text=${encodeURIComponent(msg)}`
@@ -52,6 +64,7 @@ export default function Landing() {
 
   return (
     <div dir="ltr" className="min-h-screen bg-white text-charcoal-800">
+      <Seo path="/welcome" jsonLd={jsonLd} />
       {/* Nav */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -60,6 +73,7 @@ export default function Landing() {
             <a href="#features" className="hidden sm:inline text-sm text-gray-600 hover:text-gray-900 px-3">Features</a>
             <a href="#pricing" className="hidden sm:inline text-sm text-gray-600 hover:text-gray-900 px-3">Pricing</a>
             <a href="#faq" className="hidden sm:inline text-sm text-gray-600 hover:text-gray-900 px-3">FAQ</a>
+            <Link to="/blog" className="hidden sm:inline text-sm text-gray-600 hover:text-gray-900 px-3">Blog</Link>
             <Link to="/login" className="text-sm font-medium px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50">Login</Link>
             <a href={wa('Hi! I would like a demo of OKKARO.')} target="_blank" rel="noreferrer" className="text-sm font-medium px-4 py-2 rounded-xl bg-primary-600 text-white hover:bg-primary-700">Book a demo</a>
           </div>

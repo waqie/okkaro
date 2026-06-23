@@ -26,6 +26,9 @@ import Assistant from './pages/Assistant'
 import DayReport from './pages/DayReport'
 import Owner from './pages/Owner'
 import Pricing from './pages/Pricing'
+import Blog from './pages/Blog'
+import BlogPost from './pages/Blog/Post'
+import BlogManager from './pages/Owner/BlogManager'
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
@@ -49,6 +52,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/welcome" element={<Landing />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/login" element={<Login />} />
         <Route path="/store" element={<Store />} />
         <Route path="/*" element={
@@ -75,6 +80,7 @@ export default function App() {
                 <Route path="/assistant" element={<Gated to="/assistant"><Assistant /></Gated>} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/owner" element={<Owner />} />
+                <Route path="/blog-admin" element={<BlogManager />} />
               </Routes>
             </Layout>
           </PrivateRoute>

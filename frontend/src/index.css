@@ -24,6 +24,21 @@
   .badge-draft { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800; }
 }
 
+/* Blog article (rendered markdown) */
+.prose-blog { @apply text-charcoal-700 leading-relaxed; }
+.prose-blog h2 { @apply font-display text-2xl font-bold text-charcoal-900 mt-8 mb-3; }
+.prose-blog h3 { @apply font-display text-xl font-bold text-charcoal-900 mt-6 mb-2; }
+.prose-blog p { @apply my-4; }
+.prose-blog ul { @apply list-disc ps-6 my-4 space-y-1.5; }
+.prose-blog ol { @apply list-decimal ps-6 my-4 space-y-1.5; }
+.prose-blog a { @apply text-primary-600 underline; }
+.prose-blog strong { @apply text-charcoal-900 font-semibold; }
+.prose-blog blockquote { @apply border-s-4 border-primary-200 ps-4 italic text-charcoal-500 my-4; }
+.prose-blog code { @apply bg-primary-50 text-primary-700 px-1.5 py-0.5 rounded text-sm; }
+.prose-blog pre { @apply bg-charcoal-900 text-white p-4 rounded-xl overflow-x-auto my-4 text-sm; }
+.prose-blog pre code { @apply bg-transparent text-white p-0; }
+.prose-blog img { @apply rounded-xl my-6; }
+
 /* Print: show only the invoice print area */
 @media print {
   body * { visibility: hidden !important; }
