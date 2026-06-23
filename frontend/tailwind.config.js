@@ -4,12 +4,25 @@ export default {
   theme: {
     extend: {
       colors: {
+        // OKKARO brand — Frozi teal accent (#1FAFA9) + Charcoal base (#2E434C)
         primary: {
-          50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe',
-          300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1',
-          600: '#4f46e5', 700: '#4338ca', 800: '#3730a3',
-          900: '#312e81', 950: '#1e1b4b',
+          50: '#f0fbfa', 100: '#d4f4f2', 200: '#a9e9e6',
+          300: '#72d8d3', 400: '#2bb5af', 500: '#1fafa9',
+          600: '#1fafa9', 700: '#198782', 800: '#1a6b68',
+          900: '#1b5654', 950: '#0a3433',
         },
+        // Brand named colors
+        frozi: '#1fafa9',
+        charcoal: {
+          DEFAULT: '#2e434c', 50: '#f4f6f7', 100: '#e3e8ea',
+          200: '#c7d1d5', 300: '#a0b1b8', 400: '#728995',
+          500: '#566d78', 600: '#475862', 700: '#3c4a52',
+          800: '#2e434c', 900: '#28373e', 950: '#161f23',
+        },
+      },
+      fontFamily: {
+        sans: ['Montserrat', 'system-ui', 'sans-serif'],
+        display: ['Raleway', 'Montserrat', 'system-ui', 'sans-serif'],
       },
     },
   },

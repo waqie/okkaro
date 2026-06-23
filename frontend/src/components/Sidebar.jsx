@@ -3,6 +3,7 @@ import { LayoutDashboard, ShoppingCart, FileText, FileCheck, Package, Users, Bar
 import { useAuthStore } from '../store/authStore'
 import { routeAllowed } from '../plan'
 import { useT } from '../i18n'
+import Logo from './Logo'
 
 export default function Sidebar({ onNavigate }) {
   const { user, logout, plan } = useAuthStore()
@@ -39,9 +40,8 @@ export default function Sidebar({ onNavigate }) {
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-primary-900 to-primary-950 text-white w-64 min-w-64">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-primary-800">
-        <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center font-bold text-sm">O</div>
-        <span className="font-bold text-lg tracking-tight">OKKARO</span>
+      <div className="flex items-center px-6 py-5 border-b border-primary-800">
+        <img src="/okkaro-logo-white.png" alt="OKKARO" className="h-9 w-auto" />
       </div>
 
       {/* Nav */}

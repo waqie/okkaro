@@ -7,7 +7,7 @@ import { useT } from '../../i18n'
 import { downloadBackup } from '../../utils/exporter'
 
 const money = (v) => 'Rs. ' + Number(v || 0).toLocaleString()
-const COLORS = ['#4f46e5', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6']
+const COLORS = ['#1fafa9', '#2e434c', '#3bb7b1', '#f59e0b', '#728995']
 
 export default function Insights() {
   const { t } = useT()
@@ -54,7 +54,7 @@ export default function Insights() {
               <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `${(v / 1000).toFixed(0)}K`} />
               <Tooltip formatter={(v) => money(v)} />
               <Legend />
-              <Bar dataKey="sales" fill="#4f46e5" name={t('income')} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="sales" fill="#1fafa9" name={t('income')} radius={[4, 4, 0, 0]} />
               <Bar dataKey="purchases" fill="#3b82f6" name={t('expenses_word')} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

@@ -32,8 +32,7 @@ export default function Landing() {
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold">O</div>
-            <span className="font-bold text-xl">OKKARO</span>
+            <img src="/okkaro-logo.png" alt="OKKARO" className="h-8 w-auto" />
           </div>
           <div className="flex items-center gap-2">
             <a href="#features" className="hidden sm:inline text-sm text-gray-600 hover:text-gray-900 px-3">Features</a>
@@ -145,7 +144,7 @@ export default function Landing() {
       <footer className="border-t border-gray-100 py-8">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-500">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">O</div>
+            <img src="/okkaro-mark.png" alt="OKKARO" className="w-7 h-7" />
             <span>© {new Date().getFullYear()} OKKARO</span>
           </div>
           <div className="flex gap-4">

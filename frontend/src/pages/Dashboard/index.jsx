@@ -66,8 +66,8 @@ export default function Dashboard() {
           <AreaChart data={chart}>
             <defs>
               <linearGradient id="sales" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+                <stop offset="5%" stopColor="#1fafa9" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#1fafa9" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="purchases" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
@@ -78,7 +78,7 @@ export default function Dashboard() {
             <XAxis dataKey="month" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `${(v / 1000).toFixed(0)}K`} />
             <Tooltip formatter={(v) => [`Rs. ${Number(v).toLocaleString()}`, '']} />
-            <Area type="monotone" dataKey="sales" stroke="#4f46e5" fill="url(#sales)" strokeWidth={2.5} name="Sales" />
+            <Area type="monotone" dataKey="sales" stroke="#1fafa9" fill="url(#sales)" strokeWidth={2.5} name="Sales" />
             <Area type="monotone" dataKey="purchases" stroke="#3b82f6" fill="url(#purchases)" strokeWidth={2.5} name="Purchases" />
           </AreaChart>
         </ResponsiveContainer>
