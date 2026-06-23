@@ -16,10 +16,13 @@ biz, _ = Tenant.objects.get_or_create(schema_name='demo', defaults=dict(
     name='My Business', business_name='My Business', email='owner@okkaro.app',
     plan='pro', status='active'))
 
-host = os.environ.get('APP_DOMAIN', '').strip()
-if host:
-    Domain.objects.get_or_create(domain=host, defaults=dict(tenant=biz, is_primary=True))
-    print('>>> Domain mapped:', host)
+# APP_DOMAIN may be a comma-separated list (e.g. "api.okkaro.pk,api.1.2.3.4.sslip.io").
+# Every host gets a Domain row → django-tenants can resolve the tenant for each.
+hosts = [h.strip() for h in os.environ.get('APP_DOMAIN', '').split(',') if h.strip()]
+if hosts:
+    for i, host in enumerate(hosts):
+        Domain.objects.get_or_create(domain=host, defaults=dict(tenant=biz, is_primary=(i == 0)))
+        print('>>> Domain mapped:', host)
 else:
     print('>>> WARNING: APP_DOMAIN not set — set it and re-run, else API returns 404')
 
