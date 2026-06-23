@@ -22,12 +22,13 @@ with schema_context('demo'):
             party_type='customer', phone='0300' + str(random.randint(1000000, 9999999)), city='Lahore'))
         parties.append(p)
 
-    # Products
+    # Products (unique sku each — sku is a unique column, blank would collide)
     products = []
-    for nm, sp, pp in [('Basmati Rice 5kg', 1500, 1200), ('Cooking Oil 1L', 550, 470),
+    for i, (nm, sp, pp) in enumerate([('Basmati Rice 5kg', 1500, 1200), ('Cooking Oil 1L', 550, 470),
                        ('Sugar 1kg', 140, 120), ('Tea 500g', 900, 780),
-                       ('Flour 10kg', 1300, 1150), ('Soap Bar', 90, 70)]:
+                       ('Flour 10kg', 1300, 1150), ('Soap Bar', 90, 70)], start=1):
         pr, _ = Product.objects.get_or_create(name=nm, defaults=dict(
+            sku=f'DEMO-{i:03d}',
             sale_price=sp, purchase_price=pp, current_stock=random.randint(20, 100), unit='pcs'))
         products.append(pr)
 
