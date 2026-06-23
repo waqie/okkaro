@@ -1,0 +1,165 @@
+---
+import Base from '../layouts/Base.astro'
+import Pricing from '../components/Pricing.astro'
+import { wa, APP_URL } from '../consts'
+
+const features = [
+  { t: 'Invoicing & Receipts', d: 'Create professional invoices in seconds and share them on WhatsApp or as PDF.' },
+  { t: 'Inventory & Stock', d: 'Track products, stock levels and low-stock alerts with barcode support.' },
+  { t: 'Point of Sale (POS)', d: 'A fast counter screen for quick sales — works on phone, tablet or PC.' },
+  { t: 'Accounting Engine', d: 'Real double-entry accounting, vouchers, general ledger and tax reports.' },
+  { t: 'Customer Ledger (Khata)', d: 'Digital udhaar khata — know exactly who owes you and send reminders.' },
+  { t: 'Online Store', d: 'Launch a simple online catalog and take orders without any extra tools.' },
+  { t: 'E-commerce Pricing', d: 'Multi-currency landing-cost & profit calculator for sellers and dropshippers.' },
+  { t: 'Reports & Insights', d: 'Sales trends, profit, day reports and aging — clear numbers, no spreadsheets.' },
+]
+
+const steps = [
+  { n: '1', t: 'Sign up free', d: 'Create your business account in under a minute — no card needed.' },
+  { n: '2', t: 'Add products & customers', d: 'Import from Excel or add as you go. We seed your chart of accounts automatically.' },
+  { n: '3', t: 'Start selling', d: 'Invoice, run POS, track stock and watch your reports update in real time.' },
+]
+
+const testimonials = [
+  { q: 'OKKARO replaced three apps and my notebook. My khata is finally clean.', n: 'Bilal A.', r: 'Retail store, Lahore' },
+  { q: 'The pricing calculator alone saved my dropshipping margins. Brilliant.', n: 'Hira S.', r: 'Online seller, Karachi' },
+  { q: 'Setup took ten minutes and my staff understood the POS instantly.', n: 'Imran K.', r: 'Wholesale, Faisalabad' },
+]
+
+const faqs = [
+  { q: 'Do I need accounting knowledge to use OKKARO?', a: 'No. OKKARO handles double-entry accounting in the background. You just create invoices and record expenses — the books take care of themselves.' },
+  { q: 'Can I use it on my phone?', a: 'Yes. OKKARO is mobile-first and installable as an app. You can run your whole business from your phone, including POS and WhatsApp sharing.' },
+  { q: 'Is there a free trial?', a: 'Yes — every plan starts with a 14-day free trial. No credit card required.' },
+  { q: 'Can I put my own logo on invoices?', a: 'Absolutely. Upload your business logo and it appears on your invoices, receipts and inside the app.' },
+  { q: 'Do you support international sellers?', a: 'Yes. The e-commerce pricing tools are multi-currency, and the interface is available in English and Urdu.' },
+]
+---
+
+<Base>
+  <!-- Hero -->
+  <section class="relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-primary-50/60 to-white"></div>
+    <div class="container-x relative py-20 sm:py-28 text-center">
+      <p class="eyebrow">All-in-one business platform</p>
+      <h1 class="text-4xl sm:text-6xl font-extrabold text-charcoal-900 mt-3 leading-tight">
+        Run your whole business<br class="hidden sm:block" /> from <span class="text-primary-600">one simple app</span>
+      </h1>
+      <p class="text-lg text-charcoal-500 mt-6 max-w-2xl mx-auto">
+        Accounting, invoicing, inventory, POS and an online store — built for small and medium businesses. Simple, mobile, and WhatsApp-ready.
+      </p>
+      <div class="flex flex-wrap gap-3 justify-center mt-9">
+        <a href={wa('Hi! I would like a demo of OKKARO.')} target="_blank" rel="noreferrer" class="btn-primary">Book a free demo</a>
+        <a href={APP_URL} class="btn-ghost">Start free trial</a>
+      </div>
+      <p class="text-xs text-charcoal-400 mt-4">14-day free trial · No credit card · English &amp; Urdu</p>
+    </div>
+  </section>
+
+  <!-- Trust -->
+  <section class="border-y border-charcoal-100 bg-white">
+    <div class="container-x py-8 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+      <div><p class="text-2xl font-extrabold text-charcoal-900">500+</p><p class="text-xs text-charcoal-500 mt-1">Businesses</p></div>
+      <div><p class="text-2xl font-extrabold text-charcoal-900">₨1B+</p><p class="text-xs text-charcoal-500 mt-1">Invoiced</p></div>
+      <div><p class="text-2xl font-extrabold text-charcoal-900">10 min</p><p class="text-xs text-charcoal-500 mt-1">To get started</p></div>
+      <div><p class="text-2xl font-extrabold text-charcoal-900">4.8★</p><p class="text-xs text-charcoal-500 mt-1">Avg. rating</p></div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="py-20">
+    <div class="container-x">
+      <div class="text-center max-w-2xl mx-auto">
+        <p class="eyebrow">Features</p>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-charcoal-900 mt-2">Everything you need, nothing you don't</h2>
+        <p class="text-charcoal-500 mt-3">One platform replaces your notebook, spreadsheets and half a dozen apps.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-12">
+        {features.map((f) => (
+          <div class="rounded-2xl border border-charcoal-100 p-6 hover:shadow-md transition-shadow">
+            <div class="w-11 h-11 rounded-xl bg-primary-50 flex items-center justify-center mb-4">
+              <span class="w-5 h-5 rounded-md bg-primary-600 inline-block"></span>
+            </div>
+            <h3 class="font-bold text-charcoal-900">{f.t}</h3>
+            <p class="text-sm text-charcoal-500 mt-2 leading-relaxed">{f.d}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="py-20 bg-charcoal-50">
+    <div class="container-x">
+      <div class="text-center max-w-2xl mx-auto">
+        <p class="eyebrow">How it works</p>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-charcoal-900 mt-2">Up and running in 10 minutes</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12">
+        {steps.map((s) => (
+          <div class="bg-white rounded-2xl border border-charcoal-100 p-6">
+            <div class="w-10 h-10 rounded-full bg-primary-600 text-white font-bold flex items-center justify-center">{s.n}</div>
+            <h3 class="font-bold text-charcoal-900 mt-4">{s.t}</h3>
+            <p class="text-sm text-charcoal-500 mt-2">{s.d}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <Pricing />
+
+  <!-- Testimonials -->
+  <section class="py-20 bg-charcoal-50">
+    <div class="container-x">
+      <div class="text-center max-w-2xl mx-auto">
+        <p class="eyebrow">Loved by businesses</p>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-charcoal-900 mt-2">Trusted by 500+ businesses</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+        {testimonials.map((tm) => (
+          <figure class="bg-white rounded-2xl border border-charcoal-100 p-6">
+            <div class="text-primary-600 text-lg">★★★★★</div>
+            <blockquote class="text-charcoal-700 mt-3">“{tm.q}”</blockquote>
+            <figcaption class="mt-4 text-sm"><span class="font-semibold text-charcoal-900">{tm.n}</span> · <span class="text-charcoal-500">{tm.r}</span></figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="py-20">
+    <div class="container-x max-w-3xl">
+      <div class="text-center">
+        <p class="eyebrow">FAQ</p>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-charcoal-900 mt-2">Frequently asked questions</h2>
+      </div>
+      <div class="mt-10 divide-y divide-charcoal-100 border-y border-charcoal-100">
+        {faqs.map((f) => (
+          <details class="group py-5">
+            <summary class="flex justify-between items-center cursor-pointer list-none font-semibold text-charcoal-900">
+              {f.q}
+              <span class="text-primary-600 group-open:rotate-45 transition-transform text-xl">+</span>
+            </summary>
+            <p class="text-charcoal-500 mt-3 leading-relaxed">{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-20">
+    <div class="container-x">
+      <div class="rounded-3xl bg-gradient-to-br from-primary-700 to-primary-950 text-white p-10 sm:p-14 text-center">
+        <h2 class="text-3xl sm:text-4xl font-extrabold">Make your business smart today</h2>
+        <p class="text-primary-100 mt-3 max-w-xl mx-auto">Join 500+ businesses running on OKKARO. Start your free trial or book a quick demo on WhatsApp.</p>
+        <div class="flex flex-wrap gap-3 justify-center mt-8">
+          <a href={wa('Hi! I want to start with OKKARO.')} target="_blank" rel="noreferrer" class="bg-white text-primary-700 font-semibold px-6 py-3 rounded-xl hover:bg-primary-50 transition-colors">Chat on WhatsApp</a>
+          <a href={APP_URL} class="border border-white/40 text-white font-semibold px-6 py-3 rounded-xl hover:bg-white/10 transition-colors">Start free trial</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

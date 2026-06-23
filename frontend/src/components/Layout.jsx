@@ -4,10 +4,12 @@ import { Menu } from 'lucide-react'
 import Sidebar from './Sidebar'
 import { Toaster } from 'react-hot-toast'
 import { useT } from '../i18n'
+import { useAuthStore } from '../store/authStore'
 
 export default function Layout({ children }) {
   const [open, setOpen] = useState(false)
   const { lang, toggle, dir } = useT()
+  const { business } = useAuthStore()
   const mainRef = useRef(null)
   const loc = useLocation()
   useEffect(() => { if (mainRef.current) mainRef.current.scrollTop = 0 }, [loc.pathname])
@@ -35,7 +37,9 @@ export default function Layout({ children }) {
           <button onClick={() => setOpen(true)} aria-label="menu" className="p-1">
             <Menu size={22} />
           </button>
-          <span className="font-bold tracking-tight">OKKARO</span>
+          {business?.logo_base64
+            ? <div className="flex items-center gap-2"><img src={business.logo_base64} alt="" className="h-7 w-7 object-contain bg-white rounded p-0.5" /><span className="font-bold tracking-tight truncate max-w-[150px]">{business.business_name}</span></div>
+            : <img src="/okkaro-logo-white.png" alt="OKKARO" className="h-6 w-auto" />}
           <button onClick={toggle} className="text-xs border border-primary-700 rounded-md px-2 py-1">
             {lang === 'ur' ? 'English' : 'اردو'}
           </button>

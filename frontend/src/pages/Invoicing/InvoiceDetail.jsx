@@ -4,11 +4,13 @@ import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
 import { openWhatsApp, invoiceMessage } from '../../utils/whatsapp'
+import { useAuthStore } from '../../store/authStore'
 
 const money = (v) => 'Rs. ' + Number(v || 0).toLocaleString()
 
 export default function InvoiceDetail({ invoice, onClose, onChanged }) {
   const { t } = useT()
+  const { business } = useAuthStore()
   const [pay, setPay] = useState({ amount: '', method: 'cash', date: new Date().toISOString().slice(0, 10) })
   const [saving, setSaving] = useState(false)
 
@@ -58,10 +60,13 @@ export default function InvoiceDetail({ invoice, onClose, onChanged }) {
         <div id="print-area" className="p-6">
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold">O</div>
+              {business?.logo_base64
+                ? <img src={business.logo_base64} alt={business.business_name} className="w-14 h-14 object-contain" />
+                : <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold">{(business?.business_name || 'O')[0]}</div>}
               <div>
-                <p className="font-bold text-lg leading-tight">OKKARO</p>
-                <p className="text-xs text-gray-500">{t('tagline')}</p>
+                <p className="font-bold text-lg leading-tight">{business?.business_name || 'OKKARO'}</p>
+                {business?.phone && <p className="text-xs text-gray-500">{business.phone}</p>}
+                {business?.address && <p className="text-xs text-gray-500">{business.address}{business?.city ? `, ${business.city}` : ''}</p>}
               </div>
             </div>
             <div className="text-end">

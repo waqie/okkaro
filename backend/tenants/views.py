@@ -3,9 +3,9 @@ from rest_framework.response import Response
 from django.db import connection
 from .models import Tenant
 
-FIELDS = ['business_name', 'name', 'phone', 'email', 'address', 'city', 'country', 'currency', 'plan', 'status']
+FIELDS = ['business_name', 'name', 'phone', 'email', 'address', 'city', 'country', 'currency', 'plan', 'status', 'logo_base64']
 # plan & status are read-only here — only the OKKARO admin changes them (via Django admin)
-EDITABLE = ['business_name', 'name', 'phone', 'email', 'address', 'city', 'country', 'currency']
+EDITABLE = ['business_name', 'name', 'phone', 'email', 'address', 'city', 'country', 'currency', 'logo_base64']
 
 
 class BusinessProfileView(APIView):

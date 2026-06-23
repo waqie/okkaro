@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { @apply bg-white text-charcoal-800 font-sans antialiased; }
+  h1, h2, h3 { @apply font-display; }
+}
+
+@layer components {
+  .btn-primary { @apply inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors shadow-sm; }
+  .btn-ghost { @apply inline-flex items-center justify-center gap-2 border border-charcoal-200 hover:bg-charcoal-50 text-charcoal-800 font-semibold px-6 py-3 rounded-xl transition-colors; }
+  .container-x { @apply max-w-6xl mx-auto px-4 sm:px-6; }
+  .eyebrow { @apply text-primary-600 font-semibold text-sm uppercase tracking-wide; }
+}

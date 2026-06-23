@@ -1,0 +1,40 @@
+---
+import { wa, APP_URL, SITE } from '../consts'
+const year = new Date().getFullYear()
+---
+
+<footer class="bg-charcoal-900 text-charcoal-200 mt-24">
+  <div class="container-x py-14 grid grid-cols-2 md:grid-cols-4 gap-8">
+    <div class="col-span-2 md:col-span-1">
+      <img src="/okkaro-logo-white.png" alt="OKKARO" class="h-8 w-auto" width="240" height="80" />
+      <p class="text-sm text-charcoal-300 mt-4 max-w-xs">{SITE.tagline}</p>
+    </div>
+    <div>
+      <h3 class="text-white font-semibold text-sm mb-3">Product</h3>
+      <ul class="space-y-2 text-sm">
+        <li><a href="/#features" class="hover:text-white">Features</a></li>
+        <li><a href="/#pricing" class="hover:text-white">Pricing</a></li>
+        <li><a href={APP_URL} class="hover:text-white">Log in</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="text-white font-semibold text-sm mb-3">Company</h3>
+      <ul class="space-y-2 text-sm">
+        <li><a href="/blog" class="hover:text-white">Blog</a></li>
+        <li><a href="/#faq" class="hover:text-white">FAQ</a></li>
+        <li><a href={wa('Hi! I have a question about OKKARO.')} target="_blank" rel="noreferrer" class="hover:text-white">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="text-white font-semibold text-sm mb-3">Get started</h3>
+      <a href={wa('Hi! I would like a demo of OKKARO.')} target="_blank" rel="noreferrer"
+         class="inline-flex bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">Book a demo</a>
+    </div>
+  </div>
+  <div class="border-t border-charcoal-800">
+    <div class="container-x py-5 text-xs text-charcoal-400 flex flex-col sm:flex-row justify-between gap-2">
+      <span>© {year} OKKARO. All rights reserved.</span>
+      <span>Made in Pakistan 🇵🇰 for businesses everywhere.</span>
+    </div>
+  </div>
+</footer>

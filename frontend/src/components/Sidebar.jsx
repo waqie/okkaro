@@ -6,7 +6,7 @@ import { useT } from '../i18n'
 import Logo from './Logo'
 
 export default function Sidebar({ onNavigate }) {
-  const { user, logout, plan } = useAuthStore()
+  const { user, logout, plan, business } = useAuthStore()
   const { t, toggle } = useT()
   const navigate = useNavigate()
 
@@ -39,9 +39,18 @@ export default function Sidebar({ onNavigate }) {
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-primary-900 to-primary-950 text-white w-64 min-w-64">
-      {/* Logo */}
-      <div className="flex items-center px-6 py-5 border-b border-primary-800">
-        <img src="/okkaro-logo-white.png" alt="OKKARO" className="h-9 w-auto" />
+      {/* Logo — business's own brand if set, else OKKARO */}
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-primary-800">
+        {business?.logo_base64 ? (
+          <>
+            <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center overflow-hidden shrink-0">
+              <img src={business.logo_base64} alt={business.business_name} className="max-w-full max-h-full object-contain" />
+            </div>
+            <span className="font-display font-bold text-base leading-tight truncate">{business.business_name}</span>
+          </>
+        ) : (
+          <img src="/okkaro-logo-white.png" alt="OKKARO" className="h-9 w-auto" />
+        )}
       </div>
 
       {/* Nav */}
@@ -81,6 +90,12 @@ export default function Sidebar({ onNavigate }) {
           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary-300 hover:text-white hover:bg-primary-800 rounded-lg transition-colors">
           <LogOut size={16} /> {t('sign_out')}
         </button>
+        {business?.logo_base64 && (
+          <div className="flex items-center gap-1.5 mt-3 opacity-60">
+            <span className="text-[10px] text-primary-300">Powered by</span>
+            <img src="/okkaro-logo-white.png" alt="OKKARO" className="h-3 w-auto" />
+          </div>
+        )}
       </div>
     </div>
   )

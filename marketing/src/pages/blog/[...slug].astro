@@ -1,0 +1,46 @@
+---
+import Base from '../../layouts/Base.astro'
+import { getCollection } from 'astro:content'
+import { wa } from '../../consts'
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog')
+  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }))
+}
+
+const { post } = Astro.props
+const { Content } = await post.render()
+const fmt = (d: Date) => d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+---
+
+<Base
+  title={`${post.data.title} — OKKARO Blog`}
+  description={post.data.description}
+  type="article"
+  article={{ published: post.data.pubDate.toISOString(), modified: post.data.updatedDate?.toISOString() }}
+>
+  <article class="container-x py-16 max-w-3xl">
+    <a href="/blog" class="text-sm text-primary-600 font-medium hover:underline">← All articles</a>
+    <div class="flex gap-2 flex-wrap mt-6 mb-3">
+      {post.data.tags.map((tag) => (
+        <span class="text-[11px] font-semibold text-primary-700 bg-primary-50 rounded-full px-2.5 py-0.5">{tag}</span>
+      ))}
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-charcoal-900 leading-tight">{post.data.title}</h1>
+    <p class="text-charcoal-400 text-sm mt-3">{fmt(post.data.pubDate)} · {post.data.author}</p>
+
+    <div class="prose max-w-none mt-8
+                prose-headings:font-display prose-headings:text-charcoal-900
+                prose-a:text-primary-600 prose-strong:text-charcoal-900
+                prose-code:text-primary-700 prose-code:bg-primary-50 prose-code:px-1 prose-code:rounded">
+      <Content />
+    </div>
+
+    <div class="mt-12 rounded-2xl bg-gradient-to-br from-primary-700 to-primary-950 text-white p-8 text-center">
+      <h2 class="text-2xl font-extrabold">Ready to try OKKARO?</h2>
+      <p class="text-primary-100 mt-2">Start your 14-day free trial or book a quick demo.</p>
+      <a href={wa('Hi! I read your blog and want to try OKKARO.')} target="_blank" rel="noreferrer"
+         class="inline-block mt-5 bg-white text-primary-700 font-semibold px-6 py-3 rounded-xl hover:bg-primary-50 transition-colors">Chat on WhatsApp</a>
+    </div>
+  </article>
+</Base>

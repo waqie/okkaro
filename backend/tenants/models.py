@@ -23,6 +23,7 @@ class Tenant(TenantMixin):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='trial')
     trial_ends_at = models.DateTimeField(null=True, blank=True)
     logo = models.ImageField(upload_to='tenant_logos/', null=True, blank=True)
+    logo_base64 = models.TextField(blank=True, default='')  # business's own logo (data URL) — shown on invoices & in-app
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=100, default='Pakistan')

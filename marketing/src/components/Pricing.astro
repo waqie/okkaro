@@ -1,0 +1,88 @@
+---
+import { wa } from '../consts'
+
+const plans = [
+  {
+    name: 'Basic', pkr: '1,000', usd: '5',
+    desc: 'For new & small shops',
+    features: ['Invoicing & receipts', 'Inventory & stock', 'Customer ledger (khata)', 'WhatsApp sharing', '1 user'],
+  },
+  {
+    name: 'Standard', pkr: '2,500', usd: '12', popular: true,
+    desc: 'For growing businesses',
+    features: ['Everything in Basic', 'POS / quick sale', 'Quotations', 'Expense tracking', 'Reports & insights', '3 users'],
+  },
+  {
+    name: 'Pro', pkr: '5,000', usd: '25',
+    desc: 'Full accounting suite',
+    features: ['Everything in Standard', 'Double-entry accounting', 'Vouchers & general ledger', 'Tax reports', 'Online store', 'Unlimited users'],
+  },
+  {
+    name: 'E-commerce', pkr: '4,000', usd: '20',
+    desc: 'For online sellers & dropshippers',
+    features: ['Multi-currency pricing calculator', 'Landing cost & profit', 'Marketplace & ad fees', 'Sync to inventory', 'Full accounting'],
+  },
+]
+---
+
+<section id="pricing" class="py-20">
+  <div class="container-x">
+    <div class="text-center max-w-2xl mx-auto">
+      <p class="eyebrow">Pricing</p>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-charcoal-900 mt-2">Simple, transparent pricing</h2>
+      <p class="text-charcoal-500 mt-3">Start with a 14-day free trial. No credit card required.</p>
+
+      <div class="inline-flex items-center bg-charcoal-100 rounded-full p-1 mt-6" role="group" aria-label="Currency">
+        <button data-cur="pkr" class="cur-btn px-5 py-1.5 rounded-full text-sm font-semibold bg-white text-charcoal-900 shadow-sm">PKR ₨</button>
+        <button data-cur="usd" class="cur-btn px-5 py-1.5 rounded-full text-sm font-semibold text-charcoal-500">USD $</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+      {plans.map((p) => (
+        <div class={`rounded-2xl border p-6 flex flex-col ${p.popular ? 'border-primary-600 shadow-lg ring-1 ring-primary-600/20' : 'border-charcoal-200'}`}>
+          {p.popular && <span class="self-start text-xs font-bold text-white bg-primary-600 rounded-full px-3 py-1 mb-3">MOST POPULAR</span>}
+          <h3 class="text-lg font-bold text-charcoal-900">{p.name}</h3>
+          <p class="text-sm text-charcoal-500 mt-1">{p.desc}</p>
+          <p class="mt-4">
+            <span class="text-3xl font-extrabold text-charcoal-900">
+              <span class="cur-sym">₨</span><span class="price" data-pkr={p.pkr} data-usd={p.usd}>{p.pkr}</span>
+            </span>
+            <span class="text-sm text-charcoal-400"> / month</span>
+          </p>
+          <ul class="mt-5 space-y-2.5 text-sm text-charcoal-600 flex-1">
+            {p.features.map((f) => (
+              <li class="flex items-start gap-2">
+                <svg class="w-4 h-4 text-primary-600 mt-0.5 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.1 3.1 6.8-6.8a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+          <a href={wa(`Hi! I'm interested in the OKKARO ${p.name} plan.`)} target="_blank" rel="noreferrer"
+             class={`mt-6 block text-center font-semibold px-4 py-2.5 rounded-xl transition-colors ${p.popular ? 'bg-primary-600 text-white hover:bg-primary-700' : 'border border-charcoal-200 text-charcoal-800 hover:bg-charcoal-50'}`}>Start free trial</a>
+        </div>
+      ))}
+    </div>
+    <p class="text-center text-xs text-charcoal-400 mt-6">USD prices are indicative and billed in PKR equivalent. Custom/enterprise plans available on request.</p>
+  </div>
+</section>
+
+<script is:inline>
+  (function () {
+    const btns = document.querySelectorAll('.cur-btn')
+    const prices = document.querySelectorAll('.price')
+    const syms = document.querySelectorAll('.cur-sym')
+    function set(cur) {
+      prices.forEach((el) => { el.textContent = cur === 'usd' ? el.dataset.usd : el.dataset.pkr })
+      syms.forEach((el) => { el.textContent = cur === 'usd' ? '$' : '₨' })
+      btns.forEach((b) => {
+        const on = b.dataset.cur === cur
+        b.classList.toggle('bg-white', on)
+        b.classList.toggle('text-charcoal-900', on)
+        b.classList.toggle('shadow-sm', on)
+        b.classList.toggle('text-charcoal-500', !on)
+      })
+    }
+    btns.forEach((b) => b.addEventListener('click', () => set(b.dataset.cur)))
+  })()
+</script>

@@ -1,0 +1,24 @@
+---
+import { wa, APP_URL } from '../consts'
+---
+
+<header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-charcoal-100">
+  <nav class="container-x h-16 flex items-center justify-between">
+    <a href="/" class="flex items-center" aria-label="OKKARO home">
+      <img src="/okkaro-logo.png" alt="OKKARO" class="h-8 w-auto" width="240" height="80" />
+    </a>
+
+    <div class="hidden md:flex items-center gap-8 text-sm font-medium text-charcoal-600">
+      <a href="/#features" class="hover:text-charcoal-900">Features</a>
+      <a href="/#pricing" class="hover:text-charcoal-900">Pricing</a>
+      <a href="/blog" class="hover:text-charcoal-900">Blog</a>
+      <a href="/#faq" class="hover:text-charcoal-900">FAQ</a>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <a href={APP_URL} class="hidden sm:inline text-sm font-semibold text-charcoal-700 hover:text-charcoal-900">Log in</a>
+      <a href={wa('Hi! I would like a demo of OKKARO.')} target="_blank" rel="noreferrer"
+         class="bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">Book a demo</a>
+    </div>
+  </nav>
+</header>
