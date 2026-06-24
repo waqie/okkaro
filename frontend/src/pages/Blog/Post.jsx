@@ -5,7 +5,7 @@ import api from '../../api/axios'
 import Seo from '../../components/Seo'
 import { Shell } from './index'
 
-const WA = '923355096411'
+const WA = '923399111165'
 const wa = (msg) => `https://wa.me/${WA}?text=${encodeURIComponent(msg)}`
 const fmt = (d) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 
@@ -57,7 +57,7 @@ export default function Post() {
 
         <div className="mt-12 rounded-2xl bg-gradient-to-br from-primary-700 to-primary-950 text-white p-8 text-center">
           <h2 className="text-2xl font-extrabold">Ready to try OKKARO?</h2>
-          <p className="text-primary-100 mt-2">Start your 14-day free trial or book a quick demo.</p>
+          <p className="text-primary-100 mt-2">Start your 7-day free trial or book a quick demo.</p>
           <a href={wa('Hi! I read your blog and want to try OKKARO.')} target="_blank" rel="noreferrer"
             className="inline-block mt-5 bg-white text-primary-700 font-semibold px-6 py-3 rounded-xl hover:bg-primary-50">Chat on WhatsApp</a>
         </div>

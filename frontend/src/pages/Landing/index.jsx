@@ -13,11 +13,11 @@ const jsonLd = {
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web, Android, iOS',
   description: 'All-in-one accounting, invoicing, inventory, POS and online-store platform for SMEs.',
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', description: '14-day free trial' },
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', description: '7-day free trial' },
   aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.8', ratingCount: '120' },
 }
 
-const WA = '923355096411' // business WhatsApp number
+const WA = '923399111165' // business WhatsApp number
 const wa = (msg) => `https://wa.me/${WA}?text=${encodeURIComponent(msg)}`
 
 const features = [
@@ -53,7 +53,7 @@ const testimonials = [
 const faqs = [
   ['Do I need accounting knowledge to use OKKARO?', 'No. OKKARO handles double-entry accounting in the background. You just create invoices and record expenses — the books take care of themselves.'],
   ['Can I use it on my phone?', 'Yes. OKKARO is mobile-first and installable as an app. You can run your whole business from your phone, including POS and WhatsApp sharing.'],
-  ['Is there a free trial?', 'Yes — every plan starts with a 14-day free trial. No credit card required.'],
+  ['Is there a free trial?', 'Yes — every plan starts with a 7-day free trial. No credit card required.'],
   ['Can I put my own logo on invoices?', 'Absolutely. Upload your business logo in Settings and it appears on your invoices, receipts and inside the app.'],
   ['Do you support international sellers?', 'Yes. The e-commerce pricing tools are multi-currency, and the interface is available in English and Urdu.'],
 ]
@@ -154,7 +154,7 @@ export default function Landing() {
       <section id="pricing" className="bg-gray-50 py-16">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center">Simple, transparent pricing</h2>
-          <p className="text-gray-500 text-center mt-2">Start with a 14-day free trial. No credit card required.</p>
+          <p className="text-gray-500 text-center mt-2">Start with a 7-day free trial. No credit card required.</p>
 
           <div className="flex justify-center mt-6">
             <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
