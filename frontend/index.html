@@ -14,6 +14,20 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="OKKARO" />
 
+    <!-- Google Search Console (HTML-tag method). Prefer DNS verification in Cloudflare;
+         if you use the HTML tag instead, paste your code below. -->
+    <!-- <meta name="google-site-verification" content="PASTE_YOUR_CODE_HERE" /> -->
+
+    <!-- Google Analytics (GA4). Replace G-1R26N99LVM with your Measurement ID to activate. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1R26N99LVM"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      var OKKARO_GA_ID = 'G-1R26N99LVM';
+      if (OKKARO_GA_ID && OKKARO_GA_ID.indexOf('XXXX') === -1) { gtag('config', OKKARO_GA_ID); }
+    </script>
+
     <!-- Default SEO (per-page tags are enhanced by react-helmet; these defaults
          make social/WhatsApp link previews work even without JS) -->
     <meta name="description" content="OKKARO is an all-in-one accounting, invoicing, inventory, POS and online-store platform for small and medium businesses. Simple, mobile, and WhatsApp-ready." />
