@@ -17,6 +17,7 @@ export default function Invoicing() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [parties, setParties] = useState([])
+  const [products, setProducts] = useState([])
   const blankForm = () => ({ party: '', date: new Date().toISOString().slice(0,10), invoice_type: 'sale', items: [{ product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }], discount_percent: 0, tax_percent: 0, notes: '' })
   const [form, setForm] = useState(blankForm())
 
@@ -40,6 +41,15 @@ export default function Invoicing() {
 
   useEffect(() => { fetchInvoices() }, [search, filter])
   useEffect(() => { api.get('/api/invoicing/parties/?type=customer').then(r => setParties(r.data.results || r.data)).catch(() => {}) }, [])
+  useEffect(() => { api.get('/api/inventory/products/?page_size=1000').then(r => setProducts(r.data.results || r.data)).catch(() => {}) }, [])
+
+  // type/select a product name → auto-fill the price from inventory
+  const pickProduct = (i, val) => {
+    const match = products.find(p => (p.name || '').toLowerCase() === val.toLowerCase())
+    setForm(f => ({ ...f, items: f.items.map((it, idx) => idx === i
+      ? { ...it, product_name: val, ...(match ? { unit_price: match.sale_price, unit: match.unit || it.unit } : {}) }
+      : it) }))
+  }
 
   const addItem = () => setForm(f => ({ ...f, items: [...f.items, { product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }] }))
   const removeItem = (i) => setForm(f => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }))
@@ -179,6 +189,9 @@ export default function Invoicing() {
               <h2 className="text-lg font-semibold">{editing ? 'Edit Invoice' : t('new_invoice')}</h2>
               <button onClick={closeForm} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
             </div>
+            <datalist id="prodlist">
+              {products.map(p => <option key={p.id} value={p.name}>{p.sale_price ? `Rs. ${p.sale_price}` : ''}</option>)}
+            </datalist>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -203,7 +216,7 @@ export default function Invoicing() {
                 <div className="space-y-2">
                   {form.items.map((item, i) => (
                     <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                      <input className="input col-span-5" placeholder={t('product_name')} value={item.product_name} onChange={e => updateItem(i, 'product_name', e.target.value)} required />
+                      <input className="input col-span-5" list="prodlist" placeholder={t('product_name')} value={item.product_name} onChange={e => pickProduct(i, e.target.value)} required />
                       <input type="number" className="input col-span-2" placeholder={t('qty')} value={item.quantity} onChange={e => updateItem(i, 'quantity', e.target.value)} min="0.01" step="0.01" required />
                       <input type="number" className="input col-span-3" placeholder={t('unit_price')} value={item.unit_price} onChange={e => updateItem(i, 'unit_price', e.target.value)} min="0" required />
                       <div className="col-span-1 text-end text-sm font-medium text-gray-700">

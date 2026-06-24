@@ -20,7 +20,8 @@ export const routeExclusive = {
   '/pricing': ['ecommerce'],  // Pricing Calculator = E-commerce plan only
 }
 
-export function routeAllowed(plan, to) {
+export function routeAllowed(plan, to, isSuperuser = false) {
+  if (isSuperuser) return true   // OKKARO owner/admin sees everything (incl. e-commerce)
   if (routeExclusive[to]) return routeExclusive[to].includes(plan)
   const need = routeMinRank[to] || 1
   return (planRank[plan] || 3) >= need

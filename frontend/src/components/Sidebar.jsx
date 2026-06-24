@@ -47,7 +47,7 @@ export default function Sidebar({ onNavigate }) {
       { to: '/insights', icon: LineChart, label: t('nav_insights') },
     ]},
     { title: t('grp_tools'), items: toolsItems },
-  ].map(g => ({ ...g, items: g.items.filter(i => routeAllowed(plan, i.to)) }))
+  ].map(g => ({ ...g, items: g.items.filter(i => routeAllowed(plan, i.to, user?.is_superuser)) }))
    .filter(g => g.items.length)
 
   const handleLogout = () => { logout(); navigate('/login') }

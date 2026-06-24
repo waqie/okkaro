@@ -36,9 +36,9 @@ function PrivateRoute({ children }) {
 }
 
 function Gated({ to, children }) {
-  const { plan } = useAuthStore()
+  const { plan, user } = useAuthStore()
   const { t } = useT()
-  if (routeAllowed(plan, to)) return children
+  if (routeAllowed(plan, to, user?.is_superuser)) return children
   return (
     <div className="card max-w-md">
       <h1 className="text-xl font-bold text-gray-900">🔒 {t('locked_title')}</h1>
