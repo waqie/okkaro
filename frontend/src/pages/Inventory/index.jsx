@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Search, Package, AlertTriangle, ScanLine, Barcode, Printer, X, Upload, FileDown } from 'lucide-react'
+import { Plus, Search, Package, AlertTriangle, ScanLine, Barcode, Printer, X, Upload, FileDown, Pencil, Trash2 } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import BarcodeScanner from '../../components/BarcodeScanner'
@@ -44,7 +44,9 @@ export default function Inventory() {
   const [barcodeOf, setBarcodeOf] = useState(null)
   const [importing, setImporting] = useState(false)
   const fileRef = useRef(null)
-  const [form, setForm] = useState({ name: '', sku: '', barcode: '', category: '', sale_price: '', purchase_price: '', current_stock: 0, reorder_level: 5, unit: 'pcs' })
+  const [editing, setEditing] = useState(null)
+  const blankProduct = () => ({ name: '', sku: '', barcode: '', category: '', sale_price: '', purchase_price: '', current_stock: 0, reorder_level: 5, unit: 'pcs' })
+  const [form, setForm] = useState(blankProduct())
 
   const num = (v) => { const n = parseFloat(String(v).replace(/[^0-9.]/g, '')); return isNaN(n) ? 0 : n }
 
@@ -98,15 +100,28 @@ export default function Inventory() {
   useEffect(() => { fetchProducts() }, [search, lowStock])
   useEffect(() => { api.get('/api/inventory/categories/').then(r => setCategories(r.data.results || r.data)).catch(() => {}) }, [])
 
+  const openNew = () => { setEditing(null); setForm(blankProduct()); setShowForm(true) }
+  const openEdit = (p) => {
+    setEditing(p.id)
+    setForm({ name: p.name, sku: p.sku || '', barcode: p.barcode || '', category: p.category || '', sale_price: p.sale_price, purchase_price: p.purchase_price, current_stock: p.current_stock, reorder_level: p.reorder_level, unit: p.unit })
+    setShowForm(true)
+  }
+  const closeForm = () => { setShowForm(false); setEditing(null); setForm(blankProduct()) }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      await api.post('/api/inventory/products/', form)
-      toast.success('Product added!')
-      setShowForm(false)
-      setForm({ name: '', sku: '', barcode: '', category: '', sale_price: '', purchase_price: '', current_stock: 0, reorder_level: 5, unit: 'pcs' })
+      if (editing) { await api.patch(`/api/inventory/products/${editing}/`, form); toast.success('Product updated') }
+      else { await api.post('/api/inventory/products/', form); toast.success('Product added!') }
+      closeForm()
       fetchProducts()
-    } catch { toast.error('Failed to add product') }
+    } catch (err) { toast.error(err.response?.data ? JSON.stringify(err.response.data).slice(0, 120) : 'Failed to save product') }
+  }
+
+  const delProduct = async (p) => {
+    if (!confirm(`Delete ${p.name}?`)) return
+    try { await api.delete(`/api/inventory/products/${p.id}/`); toast.success('Deleted'); fetchProducts() }
+    catch { toast.error('Error (shayad invoices se judा hai)') }
   }
 
   return (
@@ -122,7 +137,7 @@ export default function Inventory() {
           <button onClick={() => fileRef.current?.click()} disabled={importing} className="btn-secondary">
             <Upload size={15} /> {importing ? 'Importing...' : 'Import'}
           </button>
-          <button onClick={() => setShowForm(true)} className="btn-primary">
+          <button onClick={openNew} className="btn-primary">
             <Plus size={16} /> Add Product
           </button>
         </div>
@@ -165,7 +180,9 @@ export default function Inventory() {
                       <AlertTriangle size={10} /> Low
                     </span>
                   )}
+                  <button onClick={() => openEdit(p)} title="Edit" className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-blue-600"><Pencil size={16} /></button>
                   <button onClick={() => setBarcodeOf(p)} title="Barcode" className="p-1.5 hover:bg-gray-100 rounded text-gray-500"><Barcode size={16} /></button>
+                  <button onClick={() => delProduct(p)} title="Delete" className="p-1.5 hover:bg-red-50 rounded text-gray-500 hover:text-red-600"><Trash2 size={16} /></button>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3 mt-4">
@@ -194,8 +211,8 @@ export default function Inventory() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-auto">
             <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-lg font-semibold">Add Product</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+              <h2 className="text-lg font-semibold">{editing ? 'Edit Product' : 'Add Product'}</h2>
+              <button onClick={closeForm} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">

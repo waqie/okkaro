@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Printer, MessageCircle } from 'lucide-react'
 import api from '../../api/axios'
 import { useT } from '../../i18n'
@@ -8,8 +9,9 @@ const money = (v) => 'Rs. ' + Number(v || 0).toLocaleString()
 
 export default function Ledger() {
   const { t } = useT()
+  const [searchParams] = useSearchParams()
   const [parties, setParties] = useState([])
-  const [partyId, setPartyId] = useState('')
+  const [partyId, setPartyId] = useState(searchParams.get('party') || '')
   const [data, setData] = useState(null)
 
   useEffect(() => {

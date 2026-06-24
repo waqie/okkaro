@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Users, MessageCircle, Download, Upload } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
@@ -8,6 +9,7 @@ import { exportCSV, parseCSV } from '../../utils/exporter'
 
 export default function Parties() {
   const { t } = useT()
+  const navigate = useNavigate()
   const [parties, setParties] = useState([])
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -95,7 +97,9 @@ export default function Parties() {
               <tr><td colSpan={6} className="text-center py-12 text-gray-400"><Users size={40} className="mx-auto mb-2 opacity-30" />{t('no_parties')}</td></tr>
             ) : parties.map(p => (
               <tr key={p.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-900">{p.name}</td>
+                <td className="px-4 py-3 font-medium">
+                  <button onClick={() => navigate(`/khata?party=${p.id}`)} className="text-primary-700 hover:underline" title="View ledger / khata">{p.name}</button>
+                </td>
                 <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${p.party_type === 'customer' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}>{typeLabel(p.party_type)}</span></td>
                 <td className="px-4 py-3 text-gray-500">{p.phone || '—'}</td>
                 <td className="px-4 py-3 text-gray-500">{p.city || '—'}</td>

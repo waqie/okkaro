@@ -21,7 +21,7 @@ class Product(models.Model):
         ('dz', 'Dozen'), ('set', 'Set'),
     ]
     name = models.CharField(max_length=200)
-    sku = models.CharField(max_length=50, unique=True, blank=True)
+    sku = models.CharField(max_length=50, unique=True, blank=True, null=True)
     barcode = models.CharField(max_length=100, blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     description = models.TextField(blank=True)
@@ -34,6 +34,12 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        # empty SKU -> NULL so many products can have "no SKU" without clashing
+        if not self.sku:
+            self.sku = None
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
