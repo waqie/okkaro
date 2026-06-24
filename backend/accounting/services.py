@@ -110,3 +110,11 @@ def post_entry(type_, lines, date=None, narration='', reference='', source_model
 
 def cash_or_bank_code(method):
     return CASH if method == 'cash' else BANK
+
+
+def reverse_entry(source_model, source_id):
+    """Remove the journal entry posted from a source document (invoice/payment/
+    expense). Used so an edit can re-post fresh, or a delete can undo the ledger."""
+    if not source_id:
+        return 0
+    return JournalEntry.objects.filter(source_model=source_model, source_id=source_id).delete()

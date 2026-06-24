@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Search, Eye, Edit, MessageCircle, BellRing, Download } from 'lucide-react'
+import { Plus, Search, Eye, Edit, MessageCircle, BellRing, Download, Trash2 } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
@@ -15,8 +15,10 @@ export default function Invoicing() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [editing, setEditing] = useState(null)
   const [parties, setParties] = useState([])
-  const [form, setForm] = useState({ party: '', date: new Date().toISOString().slice(0,10), invoice_type: 'sale', items: [{ product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }], discount_percent: 0, tax_percent: 0, notes: '' })
+  const blankForm = () => ({ party: '', date: new Date().toISOString().slice(0,10), invoice_type: 'sale', items: [{ product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }], discount_percent: 0, tax_percent: 0, notes: '' })
+  const [form, setForm] = useState(blankForm())
 
   const statusBadge = (status) => {
     const cls = { paid: 'badge-paid', unpaid: 'badge-unpaid', partial: 'badge-partial', draft: 'badge-draft', cancelled: 'badge-draft' }
@@ -57,15 +59,35 @@ export default function Invoicing() {
     openWhatsApp(inv.party_phone, reminderMessage(t, inv))
   }
 
+  const openNew = () => { setEditing(null); setForm(blankForm()); setShowForm(true) }
+  const closeForm = () => { setShowForm(false); setEditing(null); setForm(blankForm()) }
+  const openEdit = async (inv) => {
+    try {
+      const r = await api.get(`/api/invoicing/invoices/${inv.id}/`)
+      const d = r.data
+      setForm({
+        party: d.party, date: d.date, invoice_type: d.invoice_type,
+        discount_percent: d.discount_percent, tax_percent: d.tax_percent, notes: d.notes || '',
+        items: (d.items || []).map(it => ({ product_name: it.product_name, quantity: it.quantity, unit_price: it.unit_price, unit: it.unit || 'pcs' })),
+      })
+      setEditing(inv.id); setShowForm(true)
+    } catch { toast.error(t('load_failed')) }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      await api.post('/api/invoicing/invoices/', form)
-      toast.success(t('invoice_created'))
-      setShowForm(false)
+      if (editing) { await api.patch(`/api/invoicing/invoices/${editing}/`, form); toast.success('Invoice updated') }
+      else { await api.post('/api/invoicing/invoices/', form); toast.success(t('invoice_created')) }
+      closeForm()
       fetchInvoices()
-      setForm({ party: '', date: new Date().toISOString().slice(0,10), invoice_type: 'sale', items: [{ product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }], discount_percent: 0, tax_percent: 0, notes: '' })
     } catch { toast.error(t('invoice_failed')) }
+  }
+
+  const del = async (inv) => {
+    if (!confirm(`Delete ${inv.invoice_number}? Ledger se bhi hat jayegi.`)) return
+    try { await api.delete(`/api/invoicing/invoices/${inv.id}/`); toast.success('Deleted'); fetchInvoices() }
+    catch { toast.error('Error (shayad payments judi hain)') }
   }
 
   return (
@@ -83,7 +105,7 @@ export default function Invoicing() {
             { key: 'status', label: 'Status' }])} className="btn-secondary">
             <Download size={15} /> {t('export_excel')}
           </button>
-          <button onClick={() => setShowForm(true)} className="btn-primary">
+          <button onClick={openNew} className="btn-primary">
             <Plus size={16} /> {t('new_invoice')}
           </button>
         </div>
@@ -139,7 +161,8 @@ export default function Invoicing() {
                         className="p-1.5 hover:bg-orange-50 rounded text-orange-500"><BellRing size={15} /></button>
                     )}
                     <button title={t('view')} onClick={() => setViewInvoice(inv)} className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-primary-600"><Eye size={15} /></button>
-                    <button className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-blue-600"><Edit size={15} /></button>
+                    <button title="Edit" onClick={() => openEdit(inv)} className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-blue-600"><Edit size={15} /></button>
+                    <button title="Delete" onClick={() => del(inv)} className="p-1.5 hover:bg-red-50 rounded text-gray-500 hover:text-red-600"><Trash2 size={15} /></button>
                   </div>
                 </td>
               </tr>
@@ -153,8 +176,8 @@ export default function Invoicing() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-auto">
             <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-lg font-semibold">{t('new_invoice')}</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+              <h2 className="text-lg font-semibold">{editing ? 'Edit Invoice' : t('new_invoice')}</h2>
+              <button onClick={closeForm} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -216,8 +239,8 @@ export default function Invoicing() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button type="submit" className="btn-primary flex-1 justify-center">{t('create_invoice')}</button>
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary flex-1 justify-center">{t('cancel')}</button>
+                <button type="submit" className="btn-primary flex-1 justify-center">{editing ? 'Update Invoice' : t('create_invoice')}</button>
+                <button type="button" onClick={closeForm} className="btn-secondary flex-1 justify-center">{t('cancel')}</button>
               </div>
             </form>
           </div>

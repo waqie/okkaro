@@ -1,8 +1,12 @@
 """Auto-post source documents (invoices, payments, expenses) into the ledger.
+
+Posting is idempotent: on every save we REVERSE the previous journal entry for
+that document and post a fresh one from current values — so EDITS stay correct.
+On delete we reverse the entry so the ledger is undone.
 All handlers are defensive: a posting failure must never break the source save.
 """
 import logging
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
 from .models import JournalEntry, Expense
@@ -11,17 +15,13 @@ from . import services as svc
 log = logging.getLogger(__name__)
 
 
-def _already_posted(model, pk):
-    return JournalEntry.objects.filter(source_model=model, source_id=pk).exists()
-
-
 @receiver(post_save, sender='invoicing.Invoice')
 def post_invoice(sender, instance, **kwargs):
     try:
         inv = instance
+        # reverse any prior posting so edits re-post cleanly
+        svc.reverse_entry('invoice', inv.id)
         if not inv.grand_total or float(inv.grand_total) <= 0:
-            return
-        if _already_posted('invoice', inv.id):
             return
         if not svc.acc(svc.SALES):   # chart not seeded yet
             return
@@ -51,38 +51,53 @@ def post_invoice(sender, instance, **kwargs):
         log.error("Failed to post invoice to ledger: %s", e)
 
 
-@receiver(post_save, sender='invoicing.Payment')
-def post_payment(sender, instance, created, **kwargs):
+def _recompute_invoice(invoice_id):
+    """Keep an invoice's paid_amount / balance / status in sync with its payments."""
+    if not invoice_id:
+        return
     try:
-        if not created:
+        from django.db.models import Sum
+        from invoicing.models import Invoice, Payment
+        inv = Invoice.objects.filter(id=invoice_id).first()
+        if not inv:
             return
+        paid = Payment.objects.filter(invoice_id=invoice_id).aggregate(s=Sum('amount'))['s'] or 0
+        inv.paid_amount = paid
+        inv.calculate_totals()
+        Invoice.objects.filter(id=inv.id).update(
+            paid_amount=inv.paid_amount, balance_due=inv.balance_due, status=inv.status)
+    except Exception as e:  # pragma: no cover
+        log.error("Failed to recompute invoice from payments: %s", e)
+
+
+@receiver(post_save, sender='invoicing.Payment')
+def post_payment(sender, instance, **kwargs):
+    try:
         pmt = instance
-        if not pmt.amount or float(pmt.amount) <= 0:
-            return
-        if _already_posted('payment', pmt.id):
-            return
-        if not svc.acc(svc.AR):
-            return
-        # money received from a customer: Dr Cash/Bank, Cr Accounts Receivable
-        lines = [
-            {'code': svc.cash_or_bank_code(pmt.method), 'debit': pmt.amount},
-            {'code': svc.AR, 'credit': pmt.amount, 'party': pmt.party},
-        ]
-        svc.post_entry('receipt', lines, date=pmt.date,
-                       narration=f"Payment received ({pmt.get_method_display()})",
-                       reference=pmt.reference,
-                       source_model='payment', source_id=pmt.id)
+        svc.reverse_entry('payment', pmt.id)  # re-post on edit
+        if pmt.amount and float(pmt.amount) > 0 and svc.acc(svc.AR):
+            # money received from a customer: Dr Cash/Bank, Cr Accounts Receivable
+            lines = [
+                {'code': svc.cash_or_bank_code(pmt.method), 'debit': pmt.amount},
+                {'code': svc.AR, 'credit': pmt.amount, 'party': pmt.party},
+            ]
+            svc.post_entry('receipt', lines, date=pmt.date,
+                           narration=f"Payment received ({pmt.get_method_display()})",
+                           reference=pmt.reference,
+                           source_model='payment', source_id=pmt.id)
+        _recompute_invoice(pmt.invoice_id)
     except Exception as e:  # pragma: no cover
         log.error("Failed to post payment to ledger: %s", e)
 
 
 @receiver(post_save, sender=Expense)
-def post_expense(sender, instance, created, **kwargs):
+def post_expense(sender, instance, **kwargs):
     try:
         exp = instance
-        if exp.journal_entry_id:
-            return
+        svc.reverse_entry('expense', exp.id)  # re-post on edit
         if not exp.amount or float(exp.amount) <= 0:
+            return
+        if not (exp.account_id and exp.paid_from_id):
             return
         entry = svc.post_entry(
             'expense',
@@ -99,3 +114,29 @@ def post_expense(sender, instance, created, **kwargs):
             Expense.objects.filter(pk=exp.pk).update(journal_entry=entry)
     except Exception as e:  # pragma: no cover
         log.error("Failed to post expense to ledger: %s", e)
+
+
+# ---- Deletes: undo the ledger ----
+@receiver(post_delete, sender='invoicing.Invoice')
+def unpost_invoice(sender, instance, **kwargs):
+    try:
+        svc.reverse_entry('invoice', instance.id)
+    except Exception as e:  # pragma: no cover
+        log.error("Failed to reverse invoice ledger: %s", e)
+
+
+@receiver(post_delete, sender='invoicing.Payment')
+def unpost_payment(sender, instance, **kwargs):
+    try:
+        svc.reverse_entry('payment', instance.id)
+        _recompute_invoice(instance.invoice_id)
+    except Exception as e:  # pragma: no cover
+        log.error("Failed to reverse payment ledger: %s", e)
+
+
+@receiver(post_delete, sender=Expense)
+def unpost_expense(sender, instance, **kwargs):
+    try:
+        svc.reverse_entry('expense', instance.id)
+    except Exception as e:  # pragma: no cover
+        log.error("Failed to reverse expense ledger: %s", e)

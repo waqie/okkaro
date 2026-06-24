@@ -126,17 +126,21 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
 class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
-    
+
     def get_queryset(self):
-        return Payment.objects.select_related('party', 'invoice').order_by('-date')
+        qs = Payment.objects.select_related('party', 'invoice').order_by('-date')
+        invoice = self.request.query_params.get('invoice')
+        party = self.request.query_params.get('party')
+        if invoice:
+            qs = qs.filter(invoice_id=invoice)
+        if party:
+            qs = qs.filter(party_id=party)
+        return qs
 
     def perform_create(self, serializer):
-        payment = serializer.save(created_by=self.request.user)
-        if payment.invoice:
-            invoice = payment.invoice
-            invoice.paid_amount += payment.amount
-            invoice.calculate_totals()
-            invoice.save()
+        # invoice.paid_amount / balance is kept in sync by the payment post_save
+        # signal (recompute from all payments) — no manual adjustment needed here.
+        serializer.save(created_by=self.request.user)
 
 
 class QuotationViewSet(viewsets.ModelViewSet):

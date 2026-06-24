@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, FileCheck, MessageCircle, ArrowRightCircle } from 'lucide-react'
+import { Plus, FileCheck, MessageCircle, ArrowRightCircle, Pencil, Trash2 } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
@@ -12,7 +12,9 @@ export default function Quotations() {
   const [list, setList] = useState([])
   const [parties, setParties] = useState([])
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ party: '', date: new Date().toISOString().slice(0, 10), items: [{ product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }], discount_percent: 0, tax_percent: 0, notes: '' })
+  const [editing, setEditing] = useState(null)
+  const blankForm = () => ({ party: '', date: new Date().toISOString().slice(0, 10), items: [{ product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }], discount_percent: 0, tax_percent: 0, notes: '' })
+  const [form, setForm] = useState(blankForm())
 
   const fetchList = () => api.get('/api/invoicing/quotations/').then(r => setList(r.data.results || r.data)).catch(() => {})
   useEffect(() => {
@@ -31,13 +33,27 @@ export default function Quotations() {
     return <span className={cls[s] || 'badge-draft'}>{lbl[s] || s}</span>
   }
 
+  const openNew = () => { setEditing(null); setForm(blankForm()); setShowForm(true) }
+  const closeForm = () => { setShowForm(false); setEditing(null); setForm(blankForm()) }
+  const openEdit = async (q) => {
+    try {
+      const r = await api.get(`/api/invoicing/quotations/${q.id}/`); const d = r.data
+      setForm({ party: d.party, date: d.date, discount_percent: d.discount_percent, tax_percent: d.tax_percent, notes: d.notes || '',
+        items: (d.items || []).map(it => ({ product_name: it.product_name, quantity: it.quantity, unit_price: it.unit_price, unit: it.unit || 'pcs' })) })
+      setEditing(q.id); setShowForm(true)
+    } catch { toast.error('Error') }
+  }
+  const del = async (q) => {
+    if (!confirm(`Delete quotation ${q.number}?`)) return
+    try { await api.delete(`/api/invoicing/quotations/${q.id}/`); toast.success('Deleted'); fetchList() } catch { toast.error('Error') }
+  }
+
   const submit = async (e) => {
     e.preventDefault()
     try {
-      await api.post('/api/invoicing/quotations/', form)
-      toast.success(t('quotation_created'))
-      setShowForm(false)
-      setForm({ party: '', date: new Date().toISOString().slice(0, 10), items: [{ product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }], discount_percent: 0, tax_percent: 0, notes: '' })
+      if (editing) { await api.patch(`/api/invoicing/quotations/${editing}/`, form); toast.success('Quotation updated') }
+      else { await api.post('/api/invoicing/quotations/', form); toast.success(t('quotation_created')) }
+      closeForm()
       fetchList()
     } catch { toast.error('Error') }
   }
@@ -53,7 +69,7 @@ export default function Quotations() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div><h1 className="text-2xl font-bold text-gray-900">{t('nav_quotations')}</h1><p className="text-gray-500 text-sm mt-1">{t('quotations_subtitle')}</p></div>
-        <button onClick={() => setShowForm(true)} className="btn-primary"><Plus size={16} /> {t('new_quotation')}</button>
+        <button onClick={openNew} className="btn-primary"><Plus size={16} /> {t('new_quotation')}</button>
       </div>
 
       <div className="card p-0 overflow-x-auto">
@@ -77,6 +93,10 @@ export default function Quotations() {
                     {q.status !== 'converted' && (
                       <button title={t('convert_invoice')} onClick={() => convert(q)} className="p-1.5 hover:bg-primary-50 rounded text-primary-600"><ArrowRightCircle size={15} /></button>
                     )}
+                    {q.status !== 'converted' && (
+                      <button title="Edit" onClick={() => openEdit(q)} className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-blue-600"><Pencil size={15} /></button>
+                    )}
+                    <button title="Delete" onClick={() => del(q)} className="p-1.5 hover:bg-red-50 rounded text-gray-500 hover:text-red-600"><Trash2 size={15} /></button>
                   </div>
                 </td>
               </tr>
@@ -89,8 +109,8 @@ export default function Quotations() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-auto">
             <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-lg font-semibold">{t('new_quotation')}</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+              <h2 className="text-lg font-semibold">{editing ? 'Edit Quotation' : t('new_quotation')}</h2>
+              <button onClick={closeForm} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
             </div>
             <form onSubmit={submit} className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -122,8 +142,8 @@ export default function Quotations() {
               <div className="bg-gray-50 rounded-xl p-4 text-sm flex justify-between font-bold"><span>{t('total_label')}</span><span className="text-primary-700">Rs. {subtotal.toLocaleString()}</span></div>
               <div><label className="label">{t('notes')}</label><textarea className="input" rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
               <div className="flex gap-3 pt-2">
-                <button type="submit" className="btn-primary flex-1 justify-center">{t('new_quotation')}</button>
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary flex-1 justify-center">{t('cancel')}</button>
+                <button type="submit" className="btn-primary flex-1 justify-center">{editing ? 'Update' : t('new_quotation')}</button>
+                <button type="button" onClick={closeForm} className="btn-secondary flex-1 justify-center">{t('cancel')}</button>
               </div>
             </form>
           </div>

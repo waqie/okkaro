@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Printer, MessageCircle, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Printer, MessageCircle, X, Trash2 } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
@@ -13,6 +13,19 @@ export default function InvoiceDetail({ invoice, onClose, onChanged }) {
   const { business } = useAuthStore()
   const [pay, setPay] = useState({ amount: '', method: 'cash', date: new Date().toISOString().slice(0, 10) })
   const [saving, setSaving] = useState(false)
+  const [payments, setPayments] = useState([])
+
+  const loadPayments = () => {
+    if (!invoice?.id) return
+    api.get(`/api/invoicing/payments/?invoice=${invoice.id}`).then(r => setPayments(r.data.results || r.data)).catch(() => {})
+  }
+  useEffect(() => { loadPayments() }, [invoice?.id])
+
+  const delPayment = async (id) => {
+    if (!confirm('Delete this payment? Balance dobara update ho jayega.')) return
+    try { await api.delete(`/api/invoicing/payments/${id}/`); toast.success('Payment deleted'); onChanged && onChanged(); onClose() }
+    catch { toast.error('Error') }
+  }
 
   if (!invoice) return null
 
@@ -116,6 +129,24 @@ export default function InvoiceDetail({ invoice, onClose, onChanged }) {
           {invoice.notes && <p className="text-sm text-gray-500 mt-4">{invoice.notes}</p>}
           <p className="text-center text-xs text-gray-400 mt-6">{t('thanks_business')}</p>
         </div>
+
+        {/* Payments received list (not printed) */}
+        {payments.length > 0 && (
+          <div className="no-print border-t p-6">
+            <p className="font-semibold mb-2 text-sm">{t('wa_paid')} ({payments.length})</p>
+            <div className="space-y-1.5">
+              {payments.map(p => (
+                <div key={p.id} className="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+                  <span className="text-gray-600">{p.date} · {p.method}</span>
+                  <span className="flex items-center gap-3">
+                    <span className="font-semibold text-green-700">{money(p.amount)}</span>
+                    <button onClick={() => delPayment(p.id)} className="text-gray-400 hover:text-red-600" title="Delete payment"><Trash2 size={14} /></button>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Receive payment (not printed) */}
         <div className="no-print border-t p-6">

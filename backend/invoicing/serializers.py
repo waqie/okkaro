@@ -88,3 +88,15 @@ class QuotationSerializer(serializers.ModelSerializer):
         quotation.calculate_totals()
         quotation.save()
         return quotation
+
+    def update(self, instance, validated_data):
+        items_data = validated_data.pop('items', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if items_data is not None:
+            instance.items.all().delete()
+            for item in items_data:
+                QuotationItem.objects.create(quotation=instance, **item)
+        instance.calculate_totals()
+        instance.save()
+        return instance
