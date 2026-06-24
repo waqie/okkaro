@@ -10,31 +10,45 @@ export default function Sidebar({ onNavigate }) {
   const { t, toggle } = useT()
   const navigate = useNavigate()
 
-  const allNavItems = [
-    { to: '/', icon: LayoutDashboard, label: t('dashboard') },
-    { to: '/day', icon: CalendarDays, label: t('nav_day') },
-    { to: '/pos', icon: ShoppingCart, label: t('nav_pos') },
-    { to: '/invoices', icon: FileText, label: t('invoicing') },
-    { to: '/quotations', icon: FileCheck, label: t('nav_quotations') },
-    { to: '/inventory', icon: Package, label: t('inventory') },
-    { to: '/parties', icon: Users, label: t('parties') },
-    { to: '/reminders', icon: BellRing, label: t('nav_reminders') },
-    { to: '/expenses', icon: Wallet, label: t('nav_expenses') },
-    { to: '/khata', icon: BookOpen, label: t('nav_khata') },
-    { to: '/vouchers', icon: BookText, label: t('nav_vouchers') },
-    { to: '/general-ledger', icon: ScrollText, label: t('nav_gl') },
-    { to: '/reports', icon: BarChart2, label: t('reports') },
-    { to: '/insights', icon: LineChart, label: t('nav_insights') },
-    { to: '/pricing', icon: Calculator, label: t('nav_pricing') },
+  // Grouped menu — most-used on top, clear sections so nothing has to be hunted for.
+  const toolsItems = [
     { to: '/assistant', icon: Sparkles, label: t('nav_assistant') },
-    { to: '/store-manage', icon: Store, label: t('nav_store') },
-    { to: '/accounts', icon: Library, label: t('nav_accounts') },
     { to: '/settings', icon: Settings, label: t('settings') },
   ]
+  if (user?.is_superuser) toolsItems.push({ to: '/owner', icon: Building2, label: t('nav_owner') })
+  if (user?.is_superuser) toolsItems.push({ to: '/blog-admin', icon: ScrollText, label: 'Blog' })
 
-  const navItems = allNavItems.filter((i) => routeAllowed(plan, i.to))
-  if (user?.is_superuser) navItems.push({ to: '/owner', icon: Building2, label: t('nav_owner') })
-  if (user?.is_superuser) navItems.push({ to: '/blog-admin', icon: ScrollText, label: 'Blog' })
+  const groups = [
+    { title: t('grp_daily'), items: [
+      { to: '/', icon: LayoutDashboard, label: t('dashboard') },
+      { to: '/pos', icon: ShoppingCart, label: t('nav_pos') },
+      { to: '/day', icon: CalendarDays, label: t('nav_day') },
+    ]},
+    { title: t('grp_sales'), items: [
+      { to: '/invoices', icon: FileText, label: t('invoicing') },
+      { to: '/quotations', icon: FileCheck, label: t('nav_quotations') },
+      { to: '/parties', icon: Users, label: t('parties') },
+      { to: '/reminders', icon: BellRing, label: t('nav_reminders') },
+    ]},
+    { title: t('grp_stock'), items: [
+      { to: '/inventory', icon: Package, label: t('inventory') },
+      { to: '/store-manage', icon: Store, label: t('nav_store') },
+      { to: '/pricing', icon: Calculator, label: t('nav_pricing') },
+    ]},
+    { title: t('grp_money'), items: [
+      { to: '/expenses', icon: Wallet, label: t('nav_expenses') },
+      { to: '/khata', icon: BookOpen, label: t('nav_khata') },
+      { to: '/vouchers', icon: BookText, label: t('nav_vouchers') },
+      { to: '/accounts', icon: Library, label: t('nav_accounts') },
+    ]},
+    { title: t('grp_reports'), items: [
+      { to: '/reports', icon: BarChart2, label: t('reports') },
+      { to: '/general-ledger', icon: ScrollText, label: t('nav_gl') },
+      { to: '/insights', icon: LineChart, label: t('nav_insights') },
+    ]},
+    { title: t('grp_tools'), items: toolsItems },
+  ].map(g => ({ ...g, items: g.items.filter(i => routeAllowed(plan, i.to)) }))
+   .filter(g => g.items.length)
 
   const handleLogout = () => { logout(); navigate('/login') }
 
@@ -54,17 +68,24 @@ export default function Sidebar({ onNavigate }) {
         )}
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-1">
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink key={to} to={to} end={to === '/'} onClick={onNavigate}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
-               ${isActive ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md' : 'text-primary-300 hover:bg-primary-800/60 hover:text-white'}`
-            }>
-            <Icon size={18} />
-            <span className="flex-1">{label}</span>
-          </NavLink>
+      {/* Nav — grouped */}
+      <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-4">
+        {groups.map((g) => (
+          <div key={g.title}>
+            <p className="px-3 mb-1 text-[10px] font-bold uppercase tracking-wider text-primary-400/80">{g.title}</p>
+            <div className="space-y-0.5">
+              {g.items.map(({ to, icon: Icon, label }) => (
+                <NavLink key={to} to={to} end={to === '/'} onClick={onNavigate}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                     ${isActive ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md' : 'text-primary-300 hover:bg-primary-800/60 hover:text-white'}`
+                  }>
+                  <Icon size={18} />
+                  <span className="flex-1">{label}</span>
+                </NavLink>
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 

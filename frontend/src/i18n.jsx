@@ -125,6 +125,18 @@ const translations = {
     coa_subtitle: 'All ledger accounts',
     col_code: 'Code', col_name: 'Account', col_type: 'Type',
     ty_asset: 'Asset', ty_liability: 'Liability', ty_equity: 'Equity', ty_income: 'Income', ty_expense: 'Expense',
+    // Menu groups
+    grp_daily: 'Daily', grp_sales: 'Sales', grp_stock: 'Stock & Store',
+    grp_money: 'Money & Accounts', grp_reports: 'Reports', grp_tools: 'Tools',
+    // Quick Add (guided)
+    quick_add_title: 'Quick Add — what do you want to do?',
+    quick_add_sub: 'Not sure where to enter something? Pick an action below.',
+    qa_sale: 'Sale / Bill', qa_sale_d: 'Sold goods to a customer? Make an invoice here.',
+    qa_pos: 'Quick Sale (POS)', qa_pos_d: 'Fast counter sale with instant receipt.',
+    qa_pay: 'Receive Payment', qa_pay_d: 'Got money from a customer? Open their invoice and add it.',
+    qa_exp: 'Add Expense', qa_exp_d: 'Rent, bills, salary, transport — record spending here.',
+    qa_stock: 'Add Product / Stock', qa_stock_d: 'New item or restock — manage inventory here.',
+    qa_report: 'Reports', qa_report_d: 'Month-end? See sales, profit, tax and balances here.',
     // POS
     nav_pos: 'POS / Quick Sale',
     pos_subtitle: 'Fast billing for your shop',
@@ -369,6 +381,18 @@ const translations = {
     coa_subtitle: 'تمام لیجر اکاؤنٹس',
     col_code: 'کوڈ', col_name: 'اکاؤنٹ', col_type: 'قسم',
     ty_asset: 'اثاثہ', ty_liability: 'واجب', ty_equity: 'سرمایہ', ty_income: 'آمدنی', ty_expense: 'خرچہ',
+    // Menu groups
+    grp_daily: 'روزانہ', grp_sales: 'بکری', grp_stock: 'اسٹاک اور اسٹور',
+    grp_money: 'پیسہ اور اکاؤنٹس', grp_reports: 'رپورٹس', grp_tools: 'ٹولز',
+    // Quick Add (guided)
+    quick_add_title: 'فوری اندراج — آپ کیا کرنا چاہتے ہیں؟',
+    quick_add_sub: 'سمجھ نہیں آ رہا کہاں لکھیں؟ نیچے سے انتخاب کریں۔',
+    qa_sale: 'سیل / بل', qa_sale_d: 'گاہک کو مال بیچا؟ یہاں انوائس بنائیں۔',
+    qa_pos: 'فوری سیل (POS)', qa_pos_d: 'کاؤنٹر پر تیز سیل، فوری رسید۔',
+    qa_pay: 'وصولی', qa_pay_d: 'گاہک سے پیسے ملے؟ اس کی انوائس کھول کر شامل کریں۔',
+    qa_exp: 'خرچہ شامل کریں', qa_exp_d: 'کرایہ، بل، تنخواہ، ٹرانسپورٹ — یہاں لکھیں۔',
+    qa_stock: 'پروڈکٹ / اسٹاک', qa_stock_d: 'نیا آئٹم یا اسٹاک — یہاں مینج کریں۔',
+    qa_report: 'رپورٹس', qa_report_d: 'مہینے کے آخر میں؟ سیل، منافع، ٹیکس یہاں۔',
     // POS
     nav_pos: 'POS / تیز سیل',
     pos_subtitle: 'دکان کے لیے تیز بلنگ',

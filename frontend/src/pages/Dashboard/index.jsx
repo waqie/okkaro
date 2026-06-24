@@ -51,6 +51,34 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Quick Add — guided: what to enter where */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-1">
+          <Plus size={18} className="text-primary-600" />
+          <h3 className="text-base font-semibold text-gray-900">{t('quick_add_title')}</h3>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">{t('quick_add_sub')}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {[
+            { icon: FileText, to: '/invoices', title: t('qa_sale'), desc: t('qa_sale_d'), color: 'text-primary-600 bg-primary-50' },
+            { icon: ShoppingCart, to: '/pos', title: t('qa_pos'), desc: t('qa_pos_d'), color: 'text-blue-600 bg-blue-50' },
+            { icon: DollarSign, to: '/invoices', title: t('qa_pay'), desc: t('qa_pay_d'), color: 'text-green-600 bg-green-50' },
+            { icon: Wallet, to: '/expenses', title: t('qa_exp'), desc: t('qa_exp_d'), color: 'text-red-600 bg-red-50' },
+            { icon: Package, to: '/inventory', title: t('qa_stock'), desc: t('qa_stock_d'), color: 'text-amber-600 bg-amber-50' },
+            { icon: TrendingUp, to: '/reports', title: t('qa_report'), desc: t('qa_report_d'), color: 'text-purple-600 bg-purple-50' },
+          ].map((a) => (
+            <button key={a.title} onClick={() => navigate(a.to)}
+              className="flex items-start gap-3 text-start p-3 rounded-xl border border-gray-100 hover:border-primary-400 hover:shadow-sm transition-all">
+              <span className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${a.color}`}><a.icon size={18} /></span>
+              <span>
+                <span className="block font-semibold text-sm text-gray-900">{a.title}</span>
+                <span className="block text-xs text-gray-500 leading-snug mt-0.5">{a.desc}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard title={t('sales_month')} value={stats?.total_sales_month || 0} icon={TrendingUp} color="green" prefix="Rs. " change={12} />
