@@ -5,6 +5,7 @@ import Sidebar from './Sidebar'
 import { Toaster } from 'react-hot-toast'
 import { useT } from '../i18n'
 import { useAuthStore } from '../store/authStore'
+import TrialBanner from './TrialBanner'
 
 export default function Layout({ children }) {
   const [open, setOpen] = useState(false)
@@ -46,6 +47,7 @@ export default function Layout({ children }) {
         </div>
 
         <main ref={mainRef} className="flex-1 overflow-auto bg-gray-50">
+          <TrialBanner />
           <div className="p-4 md:p-6 max-w-7xl mx-auto">{children}</div>
         </main>
       </div>

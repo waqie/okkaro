@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { routeAllowed } from './plan'
@@ -29,10 +30,15 @@ import Pricing from './pages/Pricing'
 import Blog from './pages/Blog'
 import BlogPost from './pages/Blog/Post'
 import BlogManager from './pages/Owner/BlogManager'
+import { UpgradeWall } from './components/TrialBanner'
 
 function PrivateRoute({ children }) {
-  const { isAuthenticated } = useAuthStore()
-  return isAuthenticated ? children : <Navigate to="/welcome" />
+  const { isAuthenticated, business, user, refreshPlan } = useAuthStore()
+  // refresh trial/plan status on entry so expiry is enforced even on a long session
+  useEffect(() => { if (isAuthenticated) refreshPlan() }, [isAuthenticated])
+  if (!isAuthenticated) return <Navigate to="/welcome" />
+  if (business?.trial_expired && !user?.is_superuser) return <UpgradeWall />
+  return children
 }
 
 function Gated({ to, children }) {

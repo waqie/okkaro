@@ -1,11 +1,30 @@
+from datetime import timedelta
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import connection
+from django.utils import timezone
 from .models import Tenant
+
+TRIAL_DAYS = 7
 
 FIELDS = ['business_name', 'name', 'phone', 'email', 'address', 'city', 'country', 'currency', 'plan', 'status', 'logo_base64']
 # plan & status are read-only here — only the OKKARO admin changes them (via Django admin)
 EDITABLE = ['business_name', 'name', 'phone', 'email', 'address', 'city', 'country', 'currency', 'logo_base64']
+
+
+def _trial_info(t):
+    """Days left / expired for a trial business."""
+    out = {'trial_ends_at': None, 'trial_days_left': None, 'trial_expired': False}
+    if not t:
+        return out
+    ends = getattr(t, 'trial_ends_at', None)
+    out['trial_ends_at'] = ends
+    if getattr(t, 'status', '') == 'trial' and ends:
+        now = timezone.now()
+        secs = (ends - now).total_seconds()
+        out['trial_days_left'] = max(0, int((secs + 86399) // 86400))  # round up
+        out['trial_expired'] = secs <= 0
+    return out
 
 
 class BusinessProfileView(APIView):
@@ -16,7 +35,9 @@ class BusinessProfileView(APIView):
 
     def get(self, request):
         t = self._tenant()
-        return Response({f: getattr(t, f, '') for f in FIELDS})
+        data = {f: getattr(t, f, '') for f in FIELDS}
+        data.update(_trial_info(t))
+        return Response(data)
 
     def patch(self, request):
         t = self._tenant()
@@ -43,11 +64,14 @@ class OwnerBusinessesView(APIView):
         rows = []
         for t in Tenant.objects.exclude(schema_name='public').order_by('-created_on'):
             owner = U.objects.filter(tenant_schema=t.schema_name).order_by('id').first()
+            ti = _trial_info(t)
             rows.append({
                 'id': t.id, 'schema': t.schema_name, 'business_name': t.business_name,
                 'name': t.name, 'email': t.email, 'phone': t.phone,
                 'city': t.city, 'plan': t.plan, 'status': t.status,
                 'created_on': t.created_on,
+                'trial_ends_at': ti['trial_ends_at'], 'trial_days_left': ti['trial_days_left'],
+                'trial_expired': ti['trial_expired'],
                 'username': owner.username if owner else '',
             })
         return Response(rows)
@@ -95,6 +119,7 @@ class OwnerBusinessesView(APIView):
                 name=d.get('owner_name') or business_name, email=email,
                 phone=d.get('phone', ''), city=d.get('city', ''),
                 plan=d.get('plan', 'trial'), status='trial',
+                trial_ends_at=timezone.now() + timedelta(days=TRIAL_DAYS),
             )
             tenant.save()  # auto_create_schema → creates schema + runs tenant migrations
 
@@ -122,6 +147,10 @@ class OwnerBusinessesView(APIView):
         for f in ['plan', 'status']:
             if f in request.data:
                 setattr(t, f, request.data[f])
+        # changing to a paid plan activates the account (lifts the trial block);
+        # back to 'trial' re-enables trial status.
+        if 'plan' in request.data and 'status' not in request.data:
+            t.status = 'trial' if request.data['plan'] == 'trial' else 'active'
         t.save()
         # optional: reset the business owner's login password
         new_pw = request.data.get('password')
