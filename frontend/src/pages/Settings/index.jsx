@@ -31,6 +31,21 @@ export default function Settings() {
   const { setBusiness } = useAuthStore()
   const [form, setForm] = useState({ business_name: '', phone: '', address: '', city: '', currency: 'PKR', logo_base64: '' })
   const [saving, setSaving] = useState(false)
+  const [pw, setPw] = useState({ old: '', neu: '', confirm: '' })
+  const [pwSaving, setPwSaving] = useState(false)
+
+  const changePw = async (e) => {
+    e.preventDefault()
+    if (pw.neu.length < 6) { toast.error('Naya password kam az kam 6 characters'); return }
+    if (pw.neu !== pw.confirm) { toast.error('Password match nahi ho rahe'); return }
+    setPwSaving(true)
+    try {
+      await api.post('/api/auth/change-password/', { old_password: pw.old, new_password: pw.neu })
+      toast.success('Password change ho gaya')
+      setPw({ old: '', neu: '', confirm: '' })
+    } catch (err) { toast.error(err.response?.data?.error || 'Error') }
+    finally { setPwSaving(false) }
+  }
 
   useEffect(() => {
     api.get('/api/business/').then(r => setForm(f => ({ ...f, ...r.data }))).catch(() => {})
@@ -106,6 +121,17 @@ export default function Settings() {
           <button onClick={copy} className="btn-secondary"><Copy size={15} /> {t('copy_link')}</button>
         </div>
       </div>
+
+      {/* Change password */}
+      <form onSubmit={changePw} className="card space-y-4">
+        <h3 className="font-semibold text-gray-900">Change Password</h3>
+        <div><label className="label">Current password</label><input type="password" className="input" value={pw.old} onChange={e => setPw({ ...pw, old: e.target.value })} required /></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><label className="label">New password</label><input type="password" className="input" value={pw.neu} onChange={e => setPw({ ...pw, neu: e.target.value })} required /></div>
+          <div><label className="label">Confirm new password</label><input type="password" className="input" value={pw.confirm} onChange={e => setPw({ ...pw, confirm: e.target.value })} required /></div>
+        </div>
+        <button type="submit" disabled={pwSaving} className="btn-primary"><Save size={15} /> {pwSaving ? 'Saving…' : 'Update Password'}</button>
+      </form>
     </div>
   )
 }
