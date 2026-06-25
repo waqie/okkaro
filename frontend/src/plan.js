@@ -18,6 +18,7 @@ export const routeMinRank = {
 // Features that belong ONLY to specific plans (not part of the rank ladder).
 export const routeExclusive = {
   '/pricing': ['ecommerce'],  // Pricing Calculator = E-commerce plan only
+  '/branches': ['pro'],       // Multi-branch / franchise = Pro plan only (admin bypasses)
 }
 
 export function routeAllowed(plan, to, isSuperuser = false) {

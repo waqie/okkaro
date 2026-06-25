@@ -4,12 +4,16 @@ from django.conf import settings
 from django.conf.urls.static import static
 from inventory.public import ShopInfoView, StoreProductsView
 from tenants.views import BusinessProfileView, OwnerBusinessesView
+from tenants.branch_views import BranchesView, BranchSwitchView, BranchSummaryView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/store/info/', ShopInfoView.as_view()),
     path('api/store/products/', StoreProductsView.as_view()),
     path('api/business/', BusinessProfileView.as_view()),
+    path('api/branches/', BranchesView.as_view()),
+    path('api/branches/switch/', BranchSwitchView.as_view()),
+    path('api/branches/summary/', BranchSummaryView.as_view()),
     path('api/owner/businesses/', OwnerBusinessesView.as_view()),
     path('api/owner/businesses/<int:pk>/', OwnerBusinessesView.as_view()),
     path('api/auth/', include('authentication.urls')),

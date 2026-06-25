@@ -26,6 +26,7 @@ import Reminders from './pages/Reminders'
 import Assistant from './pages/Assistant'
 import DayReport from './pages/DayReport'
 import Owner from './pages/Owner'
+import Branches from './pages/Branches'
 import Pricing from './pages/Pricing'
 import Blog from './pages/Blog'
 import BlogPost from './pages/Blog/Post'
@@ -85,6 +86,7 @@ export default function App() {
                 <Route path="/store-manage" element={<Gated to="/store-manage"><StoreManage /></Gated>} />
                 <Route path="/assistant" element={<Gated to="/assistant"><Assistant /></Gated>} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/branches" element={<Gated to="/branches"><Branches /></Gated>} />
                 <Route path="/owner" element={<Owner />} />
                 <Route path="/blog-admin" element={<BlogManager />} />
               </Routes>

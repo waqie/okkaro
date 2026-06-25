@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, ShoppingCart, FileText, FileCheck, Package, Users, BarChart2, Settings, LogOut, Globe, Wallet, BookOpen, Library, LineChart, Store, BellRing, Sparkles, CalendarDays, BookText, ScrollText, Building2, Calculator } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, FileText, FileCheck, Package, Users, BarChart2, Settings, LogOut, Globe, Wallet, BookOpen, Library, LineChart, Store, BellRing, Sparkles, CalendarDays, BookText, ScrollText, Building2, Calculator, Network } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { routeAllowed } from '../plan'
 import { useT } from '../i18n'
@@ -12,6 +12,7 @@ export default function Sidebar({ onNavigate }) {
 
   // Grouped menu — most-used on top, clear sections so nothing has to be hunted for.
   const toolsItems = [
+    { to: '/branches', icon: Network, label: 'Branches' },
     { to: '/assistant', icon: Sparkles, label: t('nav_assistant') },
     { to: '/settings', icon: Settings, label: t('settings') },
   ]

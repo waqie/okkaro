@@ -8,6 +8,11 @@ import { openWhatsApp } from '../../utils/whatsapp'
 const APP_URL = 'https://okkaro.pk'
 const RATES = { basic: 1000, standard: 2500, pro: 5000, ecommerce: 4000, trial: 0 }
 const money = (v) => 'Rs ' + Number(v || 0).toLocaleString()
+// Yearly = 10 months' price (2 months free). MRR = monthly equivalent.
+const mrrOf = (r) => {
+  const base = RATES[r.plan] || 0
+  return r.billing_cycle === 'yearly' ? Math.round(base * 10 / 12) : base
+}
 const welcomeMsg = (biz, user, pass) =>
   `Assalam o Alaikum ${biz}!\nAap ka OKKARO account tayar hai.\n\nApp: ${APP_URL}\nUsername: ${user}\nPassword: ${pass}\n\nLogin karke business shuru karein. Shukriya! — OKKARO`
 
@@ -58,6 +63,11 @@ export default function Owner() {
     catch { toast.error('Error') }
   }
 
+  const setBilling = async (id, billing_cycle) => {
+    try { await api.patch(`/api/owner/businesses/${id}/`, { billing_cycle }); toast.success('Billing updated'); fetchRows() }
+    catch { toast.error('Error') }
+  }
+
   // ---- Leads (CRM) ----
   const [leads, setLeads] = useState([])
   const fetchLeads = () => api.get('/api/leads/').then(r => setLeads(r.data.results || r.data)).catch(() => setLeads([]))
@@ -70,7 +80,7 @@ export default function Owner() {
     trial: rows.filter(r => r.status === 'trial' && !r.trial_expired).length,
     active: rows.filter(r => r.status === 'active').length,
     expired: rows.filter(r => r.trial_expired).length,
-    mrr: rows.filter(r => r.status === 'active').reduce((s, r) => s + (RATES[r.plan] || 0), 0),
+    mrr: rows.filter(r => r.status === 'active').reduce((s, r) => s + mrrOf(r), 0),
     newLeads: leads.filter(l => l.status === 'new').length,
   }
 
@@ -101,16 +111,18 @@ export default function Owner() {
       <div className="card p-0 overflow-x-auto">
         <table className="w-full text-sm min-w-[720px]">
           <thead className="bg-gray-50 border-b border-gray-100">
-            <tr>{[t('business_name_l'), t('phone_l'), t('city_l'), 'Plan', t('th_status'), 'Trial', t('col_joined'), t('th_actions')].map((h, i) => <th key={i} className="text-start px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>)}</tr>
+            <tr>{[t('business_name_l'), t('phone_l'), 'Plan', 'Billing', t('th_status'), 'Trial', t('col_joined'), t('th_actions')].map((h, i) => <th key={i} className="text-start px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>)}</tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {rows.length === 0 ? (
               <tr><td colSpan={8} className="text-center py-12 text-gray-400"><Building2 size={40} className="mx-auto mb-2 opacity-30" />{t('no_businesses')}</td></tr>
             ) : rows.map(b => (
               <tr key={b.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-900">{b.business_name || b.name}</td>
+                <td className="px-4 py-3 font-medium text-gray-900">
+                  {b.business_name || b.name}
+                  {b.is_branch && <span className="ml-1 text-[10px] font-medium text-primary-600 bg-primary-50 rounded px-1 py-0.5 align-middle">branch</span>}
+                </td>
                 <td className="px-4 py-3 text-gray-500">{b.phone || '—'}</td>
-                <td className="px-4 py-3 text-gray-500">{b.city || '—'}</td>
                 <td className="px-4 py-3">
                   <select value={b.plan} onChange={e => setPlan(b.id, e.target.value)} className="input py-1 w-28">
                     <option value="trial">Trial</option>
@@ -118,6 +130,12 @@ export default function Owner() {
                     <option value="standard">Standard</option>
                     <option value="pro">Pro</option>
                     <option value="ecommerce">E-commerce</option>
+                  </select>
+                </td>
+                <td className="px-4 py-3">
+                  <select value={b.billing_cycle || 'monthly'} onChange={e => setBilling(b.id, e.target.value)} className="input py-1 w-24">
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
                   </select>
                 </td>
                 <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 capitalize">{b.status}</span></td>

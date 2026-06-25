@@ -7,7 +7,7 @@ from .models import Tenant
 
 TRIAL_DAYS = 7
 
-FIELDS = ['business_name', 'name', 'phone', 'email', 'address', 'city', 'country', 'currency', 'plan', 'status', 'logo_base64']
+FIELDS = ['business_name', 'name', 'phone', 'email', 'address', 'city', 'country', 'currency', 'plan', 'status', 'logo_base64', 'billing_cycle']
 # plan & status are read-only here — only the OKKARO admin changes them (via Django admin)
 EDITABLE = ['business_name', 'name', 'phone', 'email', 'address', 'city', 'country', 'currency', 'logo_base64']
 
@@ -37,6 +37,17 @@ class BusinessProfileView(APIView):
         t = self._tenant()
         data = {f: getattr(t, f, '') for f in FIELDS}
         data.update(_trial_info(t))
+        # branch / franchise info
+        is_branch = bool(getattr(t, 'parent_id', None)) if t else False
+        head = (t.parent if (t and t.parent_id) else t)
+        plan = getattr(head, 'plan', '') if head else ''
+        data['is_branch'] = is_branch
+        data['branch_label'] = getattr(t, 'branch_label', '') if t else ''
+        data['can_add_branches'] = bool(plan == 'pro') or bool(request.user and request.user.is_superuser)
+        try:
+            data['branch_count'] = head.branches.count() if head else 0
+        except Exception:
+            data['branch_count'] = 0
         return Response(data)
 
     def patch(self, request):
@@ -69,6 +80,9 @@ class OwnerBusinessesView(APIView):
                 'id': t.id, 'schema': t.schema_name, 'business_name': t.business_name,
                 'name': t.name, 'email': t.email, 'phone': t.phone,
                 'city': t.city, 'plan': t.plan, 'status': t.status,
+                'billing_cycle': getattr(t, 'billing_cycle', 'monthly'),
+                'is_branch': bool(getattr(t, 'parent_id', None)),
+                'parent_schema': t.parent.schema_name if getattr(t, 'parent_id', None) else None,
                 'created_on': t.created_on,
                 'trial_ends_at': ti['trial_ends_at'], 'trial_days_left': ti['trial_days_left'],
                 'trial_expired': ti['trial_expired'],
@@ -144,7 +158,7 @@ class OwnerBusinessesView(APIView):
         t = Tenant.objects.filter(id=pk).first()
         if not t:
             return Response({'error': 'not found'}, status=404)
-        for f in ['plan', 'status']:
+        for f in ['plan', 'status', 'billing_cycle']:
             if f in request.data:
                 setattr(t, f, request.data[f])
         # changing to a paid plan activates the account (lifts the trial block);
@@ -152,6 +166,14 @@ class OwnerBusinessesView(APIView):
         if 'plan' in request.data and 'status' not in request.data:
             t.status = 'trial' if request.data['plan'] == 'trial' else 'active'
         t.save()
+        # keep a head office's branches on the same plan/status/billing
+        try:
+            if any(k in request.data for k in ('plan', 'status', 'billing_cycle')) and not getattr(t, 'parent_id', None):
+                for br in t.branches.all():
+                    br.plan, br.status, br.billing_cycle = t.plan, t.status, t.billing_cycle
+                    br.save()
+        except Exception:
+            pass
         # optional: reset the business owner's login password
         new_pw = request.data.get('password')
         if new_pw and len(new_pw) >= 6:

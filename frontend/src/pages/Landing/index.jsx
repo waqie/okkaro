@@ -186,6 +186,9 @@ export default function Landing() {
                 <h3 className="font-bold text-lg">{p.name}</h3>
                 <p className="text-sm text-gray-500 mt-1">{p.desc}</p>
                 <p className="text-3xl font-extrabold mt-3">{sym}{cur === 'usd' ? p.usd : p.pkr}<span className="text-sm font-normal text-gray-400"> /mo</span></p>
+                {(cur === 'usd' ? p.usd : p.pkr) > 0 && (
+                  <p className="text-xs text-green-600 font-medium mt-1">or {sym}{((cur === 'usd' ? p.usd : p.pkr) * 10).toLocaleString()} /year — 2 months free</p>
+                )}
                 <ul className="mt-4 space-y-2 flex-1">
                   {p.features.map((f, j) => <li key={j} className="flex items-start gap-2 text-sm text-gray-600"><Check size={15} className="text-primary-600 mt-0.5 shrink-0" /> {f}</li>)}
                 </ul>
