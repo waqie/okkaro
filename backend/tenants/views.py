@@ -155,33 +155,37 @@ class OwnerBusinessesView(APIView):
     def patch(self, request, pk):
         if not _is_owner(request):
             return Response({'error': 'forbidden'}, status=403)
+        # tenant (shared model) writes must run from the PUBLIC schema — the JWT
+        # middleware may have switched us into the admin's own business schema.
+        connection.set_schema_to_public()
         t = Tenant.objects.filter(id=pk).first()
         if not t:
             return Response({'error': 'not found'}, status=404)
-        for f in ['plan', 'status', 'billing_cycle']:
-            if f in request.data:
-                setattr(t, f, request.data[f])
-        # changing to a paid plan activates the account (lifts the trial block);
-        # back to 'trial' re-enables trial status.
-        if 'plan' in request.data and 'status' not in request.data:
-            t.status = 'trial' if request.data['plan'] == 'trial' else 'active'
-        t.save()
-        # keep a head office's branches on the same plan/status/billing
         try:
+            for f in ['plan', 'status', 'billing_cycle']:
+                if f in request.data:
+                    setattr(t, f, request.data[f])
+            # changing to a paid plan activates the account (lifts the trial block);
+            # back to 'trial' re-enables trial status.
+            if 'plan' in request.data and 'status' not in request.data:
+                t.status = 'trial' if request.data['plan'] == 'trial' else 'active'
+            t.save()
+            # keep a head office's branches on the same plan/status/billing
             if any(k in request.data for k in ('plan', 'status', 'billing_cycle')) and not getattr(t, 'parent_id', None):
                 for br in t.branches.all():
                     br.plan, br.status, br.billing_cycle = t.plan, t.status, t.billing_cycle
                     br.save()
-        except Exception:
-            pass
-        # optional: reset the business owner's login password
-        new_pw = request.data.get('password')
-        if new_pw and len(new_pw) >= 6:
-            from django.contrib.auth import get_user_model
-            U = get_user_model()
-            for u in U.objects.filter(tenant_schema=t.schema_name):
-                u.set_password(new_pw)
-                u.save()
+            # optional: reset the business owner's login password
+            new_pw = request.data.get('password')
+            if new_pw and len(new_pw) >= 6:
+                from django.contrib.auth import get_user_model
+                U = get_user_model()
+                for u in U.objects.filter(tenant_schema=t.schema_name):
+                    u.set_password(new_pw)
+                    u.save()
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            return Response({'error': f'{type(e).__name__}: {e}'}, status=400)
         return Response({'id': t.id, 'plan': t.plan, 'status': t.status})
 
     def delete(self, request, pk):
