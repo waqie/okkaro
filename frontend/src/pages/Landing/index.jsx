@@ -62,7 +62,12 @@ const faqs = [
 
 export default function Landing() {
   const [cur, setCur] = useState('pkr')
+  const [cycle, setCycle] = useState('monthly')
   const sym = cur === 'usd' ? '$' : '₨'
+  const priceFor = (p) => {
+    const base = Number(String(cur === 'usd' ? p.usd : p.pkr).replace(/,/g, '')) || 0
+    return cycle === 'yearly' ? base * 10 : base   // yearly = 10 months (2 free)
+  }
   const [lead, setLead] = useState({ name: '', phone: '', business_name: '', plan_interest: '', message: '' })
   const [leadSent, setLeadSent] = useState(false)
   const [leadBusy, setLeadBusy] = useState(false)
@@ -172,10 +177,14 @@ export default function Landing() {
           <h2 className="text-3xl font-bold text-center">Simple, transparent pricing</h2>
           <p className="text-gray-500 text-center mt-2">Start with a 7-day free trial. No credit card required.</p>
 
-          <div className="flex justify-center mt-6">
+          <div className="flex flex-wrap justify-center items-center gap-3 mt-6">
             <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
               <button onClick={() => setCur('pkr')} className={`px-5 py-1.5 rounded-full text-sm font-semibold ${cur === 'pkr' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}>PKR ₨</button>
               <button onClick={() => setCur('usd')} className={`px-5 py-1.5 rounded-full text-sm font-semibold ${cur === 'usd' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}>USD $</button>
+            </div>
+            <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
+              <button onClick={() => setCycle('monthly')} className={`px-5 py-1.5 rounded-full text-sm font-semibold ${cycle === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}>Monthly</button>
+              <button onClick={() => setCycle('yearly')} className={`px-5 py-1.5 rounded-full text-sm font-semibold ${cycle === 'yearly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}>Yearly <span className="text-green-600">−2 mo</span></button>
             </div>
           </div>
 
@@ -185,14 +194,14 @@ export default function Landing() {
                 {p.popular && <span className="self-start text-xs font-semibold text-white bg-primary-600 rounded-full px-2.5 py-0.5 mb-2">MOST POPULAR</span>}
                 <h3 className="font-bold text-lg">{p.name}</h3>
                 <p className="text-sm text-gray-500 mt-1">{p.desc}</p>
-                <p className="text-3xl font-extrabold mt-3">{sym}{cur === 'usd' ? p.usd : p.pkr}<span className="text-sm font-normal text-gray-400"> /mo</span></p>
-                {(cur === 'usd' ? p.usd : p.pkr) > 0 && (
-                  <p className="text-xs text-green-600 font-medium mt-1">or {sym}{((cur === 'usd' ? p.usd : p.pkr) * 10).toLocaleString()} /year — 2 months free</p>
-                )}
+                <p className="text-3xl font-extrabold mt-3">{sym}{priceFor(p).toLocaleString()}<span className="text-sm font-normal text-gray-400"> {cycle === 'yearly' ? '/year' : '/mo'}</span></p>
+                {cycle === 'yearly'
+                  ? <p className="text-xs text-green-600 font-medium mt-1">2 months free vs monthly</p>
+                  : <p className="text-xs text-gray-400 mt-1">or {sym}{(priceFor(p) * 10).toLocaleString()} /year — 2 months free</p>}
                 <ul className="mt-4 space-y-2 flex-1">
                   {p.features.map((f, j) => <li key={j} className="flex items-start gap-2 text-sm text-gray-600"><Check size={15} className="text-primary-600 mt-0.5 shrink-0" /> {f}</li>)}
                 </ul>
-                <a href={wa(`Hi! I'm interested in the OKKARO ${p.name} plan.`)} target="_blank" rel="noreferrer" className={`mt-6 block text-center font-semibold px-4 py-2.5 rounded-xl ${p.popular ? 'bg-primary-600 text-white hover:bg-primary-700' : 'border border-gray-200 hover:bg-gray-50'}`}>Start free trial</a>
+                <a href={wa(`Hi! I'm interested in the OKKARO ${p.name} plan (${cycle}).`)} target="_blank" rel="noreferrer" className={`mt-6 block text-center font-semibold px-4 py-2.5 rounded-xl ${p.popular ? 'bg-primary-600 text-white hover:bg-primary-700' : 'border border-gray-200 hover:bg-gray-50'}`}>Start free trial</a>
               </div>
             ))}
           </div>

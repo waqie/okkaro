@@ -68,6 +68,11 @@ export default function Owner() {
     catch { toast.error('Error') }
   }
 
+  const setStatus = async (id, status) => {
+    try { await api.patch(`/api/owner/businesses/${id}/`, { status }); toast.success('Status updated'); fetchRows() }
+    catch { toast.error('Error') }
+  }
+
   // ---- Leads (CRM) ----
   const [leads, setLeads] = useState([])
   const fetchLeads = () => api.get('/api/leads/').then(r => setLeads(r.data.results || r.data)).catch(() => setLeads([]))
@@ -138,7 +143,14 @@ export default function Owner() {
                     <option value="yearly">Yearly</option>
                   </select>
                 </td>
-                <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 capitalize">{b.status}</span></td>
+                <td className="px-4 py-3">
+                  <select value={b.status} onChange={e => setStatus(b.id, e.target.value)}
+                    className={`input py-1 w-28 font-medium ${b.status === 'active' ? 'text-green-700' : b.status === 'suspended' ? 'text-red-600' : 'text-amber-600'}`}>
+                    <option value="trial">Trial</option>
+                    <option value="active">Active (paid)</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </td>
                 <td className="px-4 py-3 text-xs">
                   {b.status !== 'trial' ? <span className="text-gray-400">—</span>
                     : b.trial_expired ? <span className="font-semibold text-red-600">Expired</span>
