@@ -58,19 +58,20 @@ export default function Owner() {
     } catch (err) { toast.error(err.response?.data?.error || 'Error') }
   }
 
+  const errMsg = (err) => err.response?.data?.error || err.response?.data?.detail || `${err.response?.status || ''} ${err.message}`.trim() || 'Error'
   const setPlan = async (id, plan) => {
     try { await api.patch(`/api/owner/businesses/${id}/`, { plan }); toast.success('Plan updated'); fetchRows() }
-    catch { toast.error('Error') }
+    catch (err) { toast.error(errMsg(err)) }
   }
 
   const setBilling = async (id, billing_cycle) => {
     try { await api.patch(`/api/owner/businesses/${id}/`, { billing_cycle }); toast.success('Billing updated'); fetchRows() }
-    catch { toast.error('Error') }
+    catch (err) { toast.error(errMsg(err)) }
   }
 
   const setStatus = async (id, status) => {
     try { await api.patch(`/api/owner/businesses/${id}/`, { status }); toast.success('Status updated'); fetchRows() }
-    catch { toast.error('Error') }
+    catch (err) { toast.error(errMsg(err)) }
   }
 
   // ---- Leads (CRM) ----
