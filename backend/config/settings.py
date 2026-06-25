@@ -22,6 +22,7 @@ SHARED_APPS = [
     'corsheaders',
     'authentication',
     'blog',
+    'leads',
 ]
 
 TENANT_APPS = [

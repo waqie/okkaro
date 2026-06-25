@@ -5,7 +5,9 @@ import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
 import { openWhatsApp } from '../../utils/whatsapp'
 
-const APP_URL = 'https://okkaro.vercel.app'
+const APP_URL = 'https://okkaro.pk'
+const RATES = { basic: 1000, standard: 2500, pro: 5000, ecommerce: 4000, trial: 0 }
+const money = (v) => 'Rs ' + Number(v || 0).toLocaleString()
 const welcomeMsg = (biz, user, pass) =>
   `Assalam o Alaikum ${biz}!\nAap ka OKKARO account tayar hai.\n\nApp: ${APP_URL}\nUsername: ${user}\nPassword: ${pass}\n\nLogin karke business shuru karein. Shukriya! — OKKARO`
 
@@ -56,6 +58,22 @@ export default function Owner() {
     catch { toast.error('Error') }
   }
 
+  // ---- Leads (CRM) ----
+  const [leads, setLeads] = useState([])
+  const fetchLeads = () => api.get('/api/leads/').then(r => setLeads(r.data.results || r.data)).catch(() => setLeads([]))
+  useEffect(() => { fetchLeads() }, [])
+  const setLeadStatus = async (id, status) => { try { await api.patch(`/api/leads/${id}/`, { status }); fetchLeads() } catch { toast.error('Error') } }
+  const delLead = async (id) => { if (!confirm('Delete this lead?')) return; try { await api.delete(`/api/leads/${id}/`); fetchLeads() } catch { toast.error('Error') } }
+
+  const stats = {
+    total: rows.length,
+    trial: rows.filter(r => r.status === 'trial' && !r.trial_expired).length,
+    active: rows.filter(r => r.status === 'active').length,
+    expired: rows.filter(r => r.trial_expired).length,
+    mrr: rows.filter(r => r.status === 'active').reduce((s, r) => s + (RATES[r.plan] || 0), 0),
+    newLeads: leads.filter(l => l.status === 'new').length,
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -63,9 +81,21 @@ export default function Owner() {
         <button onClick={() => setShow(true)} className="btn-primary"><Plus size={16} /> {t('add_business')}</button>
       </div>
 
-      <div className="card flex items-center justify-between">
-        <span className="text-gray-500 flex items-center gap-2"><Building2 size={16} /> Businesses</span>
-        <span className="text-2xl font-bold text-primary-700">{rows.length}</span>
+      {/* Overview stats */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+        {[
+          { label: 'Businesses', value: stats.total, color: 'text-primary-700' },
+          { label: 'On trial', value: stats.trial, color: 'text-amber-600' },
+          { label: 'Active (paid)', value: stats.active, color: 'text-green-600' },
+          { label: 'Expired', value: stats.expired, color: 'text-red-600' },
+          { label: 'New leads', value: stats.newLeads, color: 'text-blue-600' },
+          { label: 'MRR (monthly)', value: money(stats.mrr), color: 'text-primary-700', small: true },
+        ].map((s) => (
+          <div key={s.label} className="card py-4">
+            <p className="text-xs text-gray-400">{s.label}</p>
+            <p className={`font-bold mt-1 ${s.small ? 'text-lg' : 'text-2xl'} ${s.color}`}>{s.value}</p>
+          </div>
+        ))}
       </div>
 
       <div className="card p-0 overflow-x-auto">
@@ -109,6 +139,46 @@ export default function Owner() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Leads (from website contact form) */}
+      <div>
+        <h2 className="text-lg font-bold text-gray-900 mt-2 mb-3">Leads {stats.newLeads > 0 && <span className="text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 align-middle">{stats.newLeads} new</span>}</h2>
+        <div className="card p-0 overflow-x-auto">
+          <table className="w-full text-sm min-w-[760px]">
+            <thead className="bg-gray-50 border-b border-gray-100">
+              <tr>{['Name', 'Phone', 'Business', 'Plan', 'Message', 'Status', 'Date', ''].map((h, i) => <th key={i} className="text-start px-4 py-3 text-xs font-semibold text-gray-500 uppercase">{h}</th>)}</tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {leads.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-10 text-gray-400">No leads yet — they appear here when someone fills the website contact form.</td></tr>
+              ) : leads.map(l => (
+                <tr key={l.id} className={`hover:bg-gray-50 ${l.status === 'new' ? 'bg-blue-50/40' : ''}`}>
+                  <td className="px-4 py-3 font-medium text-gray-900">{l.name}</td>
+                  <td className="px-4 py-3 text-gray-500">{l.phone || '—'}</td>
+                  <td className="px-4 py-3 text-gray-500">{l.business_name || '—'}</td>
+                  <td className="px-4 py-3 text-gray-500">{l.plan_interest || '—'}</td>
+                  <td className="px-4 py-3 text-gray-500 max-w-[220px] truncate" title={l.message}>{l.message || '—'}</td>
+                  <td className="px-4 py-3">
+                    <select value={l.status} onChange={e => setLeadStatus(l.id, e.target.value)} className="input py-1 w-32 text-xs">
+                      <option value="new">New</option>
+                      <option value="contacted">Contacted</option>
+                      <option value="converted">Converted</option>
+                      <option value="lost">Lost</option>
+                    </select>
+                  </td>
+                  <td className="px-4 py-3 text-gray-400 text-xs">{new Date(l.created_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1">
+                      {l.phone && <button title="WhatsApp" onClick={() => openWhatsApp(l.phone, `Assalam o Alaikum ${l.name}! OKKARO se rabta — aap ne demo/quote maanga tha.`)} className="p-1.5 hover:bg-green-50 rounded text-green-600"><MessageCircle size={15} /></button>}
+                      <button title="Delete" onClick={() => delLead(l.id)} className="p-1.5 hover:bg-red-50 rounded text-red-500"><Trash2 size={15} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {show && (

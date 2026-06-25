@@ -5,6 +5,8 @@ import {
   Sparkles, BookOpen, Check, ArrowRight, Smartphone, Globe, ShieldCheck, Plus,
 } from 'lucide-react'
 import Seo from '../../components/Seo'
+import api from '../../api/axios'
+import toast from 'react-hot-toast'
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -61,6 +63,20 @@ const faqs = [
 export default function Landing() {
   const [cur, setCur] = useState('pkr')
   const sym = cur === 'usd' ? '$' : '₨'
+  const [lead, setLead] = useState({ name: '', phone: '', business_name: '', plan_interest: '', message: '' })
+  const [leadSent, setLeadSent] = useState(false)
+  const [leadBusy, setLeadBusy] = useState(false)
+
+  const submitLead = async (e) => {
+    e.preventDefault()
+    if (!lead.name.trim() || !lead.phone.trim()) { toast.error('Name aur phone zaroori hain'); return }
+    setLeadBusy(true)
+    try {
+      await api.post('/api/leads/', { ...lead, source: 'website' })
+      setLeadSent(true); setLead({ name: '', phone: '', business_name: '', plan_interest: '', message: '' })
+    } catch { toast.error('Kuch masla hua, dobara koshish karein ya WhatsApp karein') }
+    finally { setLeadBusy(false) }
+  }
 
   return (
     <div dir="ltr" className="min-h-screen bg-white text-charcoal-800">
@@ -228,6 +244,42 @@ export default function Landing() {
               <Link to="/login" className="inline-flex items-center gap-2 border border-white/40 text-white font-semibold px-6 py-3 rounded-xl hover:bg-white/10">Start free trial</Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Contact / Lead form */}
+      <section id="contact" className="py-16 bg-gray-50">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="text-center">
+            <p className="text-primary-600 font-semibold text-sm uppercase tracking-wide">Get in touch</p>
+            <h2 className="text-3xl font-bold mt-2">Request a free demo or quote</h2>
+            <p className="text-gray-500 mt-2">Fill the form and our team will contact you. Prefer WhatsApp? <a href={wa('Hi! I would like a demo of OKKARO.')} target="_blank" rel="noreferrer" className="text-primary-600 font-medium">Message us</a>.</p>
+          </div>
+          {leadSent ? (
+            <div className="card mt-8 text-center">
+              <p className="text-2xl">✅</p>
+              <h3 className="font-bold text-lg mt-2">Thank you!</h3>
+              <p className="text-gray-500 mt-1">We've received your request and will contact you shortly.</p>
+            </div>
+          ) : (
+            <form onSubmit={submitLead} className="card mt-8 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label className="label">Your name *</label><input className="input" value={lead.name} onChange={e => setLead({ ...lead, name: e.target.value })} required /></div>
+                <div><label className="label">Phone / WhatsApp *</label><input className="input" value={lead.phone} onChange={e => setLead({ ...lead, phone: e.target.value })} placeholder="03001234567" required /></div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label className="label">Business name</label><input className="input" value={lead.business_name} onChange={e => setLead({ ...lead, business_name: e.target.value })} /></div>
+                <div><label className="label">Interested plan</label>
+                  <select className="input" value={lead.plan_interest} onChange={e => setLead({ ...lead, plan_interest: e.target.value })}>
+                    <option value="">— Select —</option>
+                    <option>Basic</option><option>Standard</option><option>Pro</option><option>E-commerce</option><option>Not sure</option>
+                  </select>
+                </div>
+              </div>
+              <div><label className="label">Message</label><textarea className="input" rows={3} value={lead.message} onChange={e => setLead({ ...lead, message: e.target.value })} placeholder="Tell us about your business…" /></div>
+              <button type="submit" disabled={leadBusy} className="btn-primary w-full justify-center">{leadBusy ? 'Sending…' : 'Send request'}</button>
+            </form>
+          )}
         </div>
       </section>
 
