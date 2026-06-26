@@ -23,7 +23,7 @@ export default function Expenses() {
     fetchExpenses()
     api.get('/api/accounting/accounts/?type=expense&postable=1').then(r => setExpAccounts(r.data.results || r.data)).catch(() => {})
     api.get('/api/accounting/accounts/?type=asset&postable=1').then(r => setCashAccounts(r.data.results || r.data)).catch(() => {})
-    api.get('/api/invoicing/parties/?type=vendor').then(r => setVendors(r.data.results || r.data)).catch(() => {})
+    api.get('/api/invoicing/parties/').then(r => setVendors(r.data.results || r.data)).catch(() => {})
   }, [])
 
   const openNew = () => { setEditing(null); setForm(blankForm()); setShowForm(true) }
