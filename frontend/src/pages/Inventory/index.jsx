@@ -45,7 +45,7 @@ export default function Inventory() {
   const [importing, setImporting] = useState(false)
   const fileRef = useRef(null)
   const [editing, setEditing] = useState(null)
-  const blankProduct = () => ({ name: '', sku: '', barcode: '', category: '', sale_price: '', purchase_price: '', current_stock: 0, reorder_level: 5, unit: 'pcs' })
+  const blankProduct = () => ({ name: '', product_type: 'good', sku: '', barcode: '', category_name: '', sale_price: '', purchase_price: '', current_stock: 0, reorder_level: 5, unit: 'pcs' })
   const [form, setForm] = useState(blankProduct())
 
   const num = (v) => { const n = parseFloat(String(v).replace(/[^0-9.]/g, '')); return isNaN(n) ? 0 : n }
@@ -103,16 +103,37 @@ export default function Inventory() {
   const openNew = () => { setEditing(null); setForm(blankProduct()); setShowForm(true) }
   const openEdit = (p) => {
     setEditing(p.id)
-    setForm({ name: p.name, sku: p.sku || '', barcode: p.barcode || '', category: p.category || '', sale_price: p.sale_price, purchase_price: p.purchase_price, current_stock: p.current_stock, reorder_level: p.reorder_level, unit: p.unit })
+    setForm({ name: p.name, product_type: p.product_type || 'good', sku: p.sku || '', barcode: p.barcode || '', category_name: p.category_name || '', sale_price: p.sale_price, purchase_price: p.purchase_price, current_stock: p.current_stock, reorder_level: p.reorder_level, unit: p.unit })
     setShowForm(true)
   }
   const closeForm = () => { setShowForm(false); setEditing(null); setForm(blankProduct()) }
 
+  // resolve a typed category name → existing id, or create a new category
+  const resolveCategory = async (name) => {
+    const n = (name || '').trim()
+    if (!n) return null
+    const found = categories.find(c => (c.name || '').toLowerCase() === n.toLowerCase())
+    if (found) return found.id
+    try {
+      const r = await api.post('/api/inventory/categories/', { name: n })
+      setCategories(prev => [...prev, r.data])
+      return r.data.id
+    } catch { return null }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      if (editing) { await api.patch(`/api/inventory/products/${editing}/`, form); toast.success('Product updated') }
-      else { await api.post('/api/inventory/products/', form); toast.success('Product added!') }
+      const isService = form.product_type === 'service'
+      const category = await resolveCategory(form.category_name)
+      const { category_name, ...rest } = form
+      const payload = {
+        ...rest, category,
+        current_stock: isService ? 0 : rest.current_stock,
+        reorder_level: isService ? 0 : rest.reorder_level,
+      }
+      if (editing) { await api.patch(`/api/inventory/products/${editing}/`, payload); toast.success('Product updated') }
+      else { await api.post('/api/inventory/products/', payload); toast.success('Product added!') }
       closeForm()
       fetchProducts()
     } catch (err) { toast.error(err.response?.data ? JSON.stringify(err.response.data).slice(0, 120) : 'Failed to save product') }
@@ -175,10 +196,18 @@ export default function Inventory() {
                   <p className="text-xs text-gray-400 mt-0.5">SKU: {p.sku || '—'} · {p.category_name || 'Uncategorized'}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {p.low_stock && (
+                  {p.stock_status === 'out' && (
+                    <span className="flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                      <AlertTriangle size={10} /> Out of stock
+                    </span>
+                  )}
+                  {p.stock_status === 'low' && (
                     <span className="flex items-center gap-1 text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
                       <AlertTriangle size={10} /> Low
                     </span>
+                  )}
+                  {p.stock_status === 'service' && (
+                    <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">Service</span>
                   )}
                   <button onClick={() => openEdit(p)} title="Edit" className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-blue-600"><Pencil size={16} /></button>
                   <button onClick={() => setBarcodeOf(p)} title="Barcode" className="p-1.5 hover:bg-gray-100 rounded text-gray-500"><Barcode size={16} /></button>
@@ -188,8 +217,8 @@ export default function Inventory() {
               <div className="grid grid-cols-3 gap-3 mt-4">
                 <div className="bg-gray-50 rounded-lg p-2.5">
                   <p className="text-xs text-gray-400">Stock</p>
-                  <p className={`text-base font-bold ${p.current_stock <= 0 ? 'text-red-600' : p.low_stock ? 'text-orange-600' : 'text-gray-900'}`}>
-                    {p.current_stock} {p.unit}
+                  <p className={`text-base font-bold ${p.stock_status === 'service' ? 'text-gray-400' : p.stock_status === 'out' ? 'text-red-600' : p.stock_status === 'low' ? 'text-orange-600' : 'text-gray-900'}`}>
+                    {p.product_type === 'service' ? '—' : `${p.current_stock} ${p.unit}`}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5">
@@ -221,6 +250,18 @@ export default function Inventory() {
                   <input className="input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required placeholder="e.g. Basmati Rice 5kg" />
                 </div>
                 <div>
+                  <label className="label">Type</label>
+                  <select className="input" value={form.product_type} onChange={e => setForm({...form, product_type: e.target.value})}>
+                    <option value="good">Good (tracks stock)</option>
+                    <option value="service">Service (no stock)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Category</label>
+                  <input className="input" list="catlist" value={form.category_name} onChange={e => setForm({...form, category_name: e.target.value})} placeholder="e.g. Drinks" />
+                  <datalist id="catlist">{categories.map(c => <option key={c.id} value={c.name} />)}</datalist>
+                </div>
+                <div>
                   <label className="label">SKU</label>
                   <input className="input" value={form.sku} onChange={e => setForm({...form, sku: e.target.value})} placeholder="Auto or manual" />
                 </div>
@@ -244,14 +285,16 @@ export default function Inventory() {
                   <label className="label">Purchase Price (Rs.)</label>
                   <input type="number" className="input" value={form.purchase_price} onChange={e => setForm({...form, purchase_price: e.target.value})} min="0" />
                 </div>
+                {form.product_type === 'good' && <>
                 <div>
                   <label className="label">Opening Stock</label>
                   <input type="number" className="input" value={form.current_stock} onChange={e => setForm({...form, current_stock: e.target.value})} min="0" />
                 </div>
                 <div>
-                  <label className="label">Reorder Level</label>
+                  <label className="label">Reorder Level (low-stock alert)</label>
                   <input type="number" className="input" value={form.reorder_level} onChange={e => setForm({...form, reorder_level: e.target.value})} min="0" />
                 </div>
+                </>}
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="btn-primary flex-1 justify-center">Add Product</button>

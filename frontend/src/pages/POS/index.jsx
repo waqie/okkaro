@@ -66,15 +66,28 @@ export default function POS() {
     return res.data.id
   }
 
+  // warn (but don't block) if cart exceeds available stock
+  const checkStock = () => {
+    const over = []
+    cart.forEach(it => {
+      const p = products.find(pr => pr.id === it.product_id)
+      if (p && p.product_type === 'good' && it.quantity > Number(p.current_stock)) {
+        over.push(`${p.name} (stock ${p.current_stock}, sale ${it.quantity})`)
+      }
+    })
+    if (over.length) toast(`⚠ Stock kam hai: ${over.join(', ')}`, { duration: 5000, icon: '⚠️' })
+  }
+
   const completeSale = async () => {
     if (!cart.length) return
+    checkStock()
     setBusy(true)
     try {
       const party = await ensureWalkIn()
       const payload = {
         party, date: new Date().toISOString().slice(0, 10), invoice_type: 'sale',
         discount_percent: 0, tax_percent: 0, notes: 'POS',
-        items: cart.map(it => ({ product_name: it.product_name, quantity: it.quantity, unit_price: it.unit_price, unit: 'pcs' })),
+        items: cart.map(it => ({ product: it.product_id || null, product_name: it.product_name, quantity: it.quantity, unit_price: it.unit_price, unit: 'pcs' })),
       }
       const res = await api.post('/api/invoicing/invoices/', payload)
       const inv = res.data
@@ -86,14 +99,7 @@ export default function POS() {
           method: 'cash', date: payload.date,
         }).catch(() => {})
       }
-      // reduce stock for inventory items
-      for (const it of cart) {
-        if (it.product_id) {
-          api.post('/api/inventory/stock-movements/', {
-            product: it.product_id, movement_type: 'out', quantity: it.quantity, reference: inv.invoice_number,
-          }).catch(() => {})
-        }
-      }
+      // stock is reduced automatically by the backend (invoice stock sync) — no manual movement here
       toast.success(t('sale_done'))
       setCart([]); setReceived(''); setPartyId('')
       // refresh stock + show receipt

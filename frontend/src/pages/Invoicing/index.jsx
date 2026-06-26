@@ -18,7 +18,7 @@ export default function Invoicing() {
   const [editing, setEditing] = useState(null)
   const [parties, setParties] = useState([])
   const [products, setProducts] = useState([])
-  const blankForm = () => ({ party: '', date: new Date().toISOString().slice(0,10), invoice_type: 'sale', items: [{ product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }], discount_percent: 0, tax_percent: 0, notes: '' })
+  const blankForm = () => ({ party: '', date: new Date().toISOString().slice(0,10), invoice_type: 'sale', items: [{ product: null, product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }], discount_percent: 0, tax_percent: 0, notes: '' })
   const [form, setForm] = useState(blankForm())
 
   const statusBadge = (status) => {
@@ -43,15 +43,15 @@ export default function Invoicing() {
   useEffect(() => { api.get('/api/invoicing/parties/?type=customer').then(r => setParties(r.data.results || r.data)).catch(() => {}) }, [])
   useEffect(() => { api.get('/api/inventory/products/?page_size=1000').then(r => setProducts(r.data.results || r.data)).catch(() => {}) }, [])
 
-  // type/select a product name → auto-fill the price from inventory
+  // type/select a product name → auto-fill the price + link to inventory
   const pickProduct = (i, val) => {
     const match = products.find(p => (p.name || '').toLowerCase() === val.toLowerCase())
     setForm(f => ({ ...f, items: f.items.map((it, idx) => idx === i
-      ? { ...it, product_name: val, ...(match ? { unit_price: match.sale_price, unit: match.unit || it.unit } : {}) }
+      ? { ...it, product_name: val, product: match ? match.id : null, ...(match ? { unit_price: match.sale_price, unit: match.unit || it.unit } : {}) }
       : it) }))
   }
 
-  const addItem = () => setForm(f => ({ ...f, items: [...f.items, { product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }] }))
+  const addItem = () => setForm(f => ({ ...f, items: [...f.items, { product: null, product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }] }))
   const removeItem = (i) => setForm(f => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }))
   const updateItem = (i, field, val) => setForm(f => ({ ...f, items: f.items.map((it, idx) => idx === i ? { ...it, [field]: val } : it) }))
 
@@ -78,14 +78,28 @@ export default function Invoicing() {
       setForm({
         party: d.party, date: d.date, invoice_type: d.invoice_type,
         discount_percent: d.discount_percent, tax_percent: d.tax_percent, notes: d.notes || '',
-        items: (d.items || []).map(it => ({ product_name: it.product_name, quantity: it.quantity, unit_price: it.unit_price, unit: it.unit || 'pcs' })),
+        items: (d.items || []).map(it => ({ product: it.product || null, product_name: it.product_name, quantity: it.quantity, unit_price: it.unit_price, unit: it.unit || 'pcs' })),
       })
       setEditing(inv.id); setShowForm(true)
     } catch { toast.error(t('load_failed')) }
   }
 
+  // warn (but don't block) if a sale exceeds available stock
+  const checkStock = () => {
+    if (form.invoice_type !== 'sale') return
+    const over = []
+    form.items.forEach(it => {
+      const p = products.find(pr => pr.id === it.product)
+      if (p && p.product_type === 'good' && Number(it.quantity) > Number(p.current_stock)) {
+        over.push(`${p.name} (stock ${p.current_stock}, sale ${it.quantity})`)
+      }
+    })
+    if (over.length) toast(`⚠ Stock kam hai: ${over.join(', ')}`, { duration: 5000, icon: '⚠️' })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    checkStock()
     try {
       if (editing) { await api.patch(`/api/invoicing/invoices/${editing}/`, form); toast.success('Invoice updated') }
       else { await api.post('/api/invoicing/invoices/', form); toast.success(t('invoice_created')) }
@@ -212,6 +226,13 @@ export default function Invoicing() {
                 <div className="flex items-center justify-between mb-2">
                   <label className="label mb-0">{t('items_label')}</label>
                   <button type="button" onClick={addItem} className="text-sm text-primary-600 font-medium hover:underline">{t('add_item')}</button>
+                </div>
+                <div className="grid grid-cols-12 gap-2 px-1 mb-1 text-[11px] font-semibold text-gray-400 uppercase">
+                  <span className="col-span-5">Product / Item</span>
+                  <span className="col-span-2">Qty</span>
+                  <span className="col-span-3">Unit price (Rs)</span>
+                  <span className="col-span-1 text-end">Total</span>
+                  <span className="col-span-1" />
                 </div>
                 <div className="space-y-2">
                   {form.items.map((item, i) => (

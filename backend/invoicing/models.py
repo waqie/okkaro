@@ -78,6 +78,8 @@ class Invoice(models.Model):
 
 class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey('inventory.Product', null=True, blank=True,
+                                on_delete=models.SET_NULL, related_name='invoice_items')
     product_name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
@@ -146,6 +148,8 @@ class Quotation(models.Model):
 
 class QuotationItem(models.Model):
     quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey('inventory.Product', null=True, blank=True,
+                                on_delete=models.SET_NULL, related_name='quotation_items')
     product_name = models.CharField(max_length=200)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
     unit = models.CharField(max_length=20, default='pcs')

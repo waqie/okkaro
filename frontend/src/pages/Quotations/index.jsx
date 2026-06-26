@@ -11,20 +11,29 @@ export default function Quotations() {
   const { t } = useT()
   const [list, setList] = useState([])
   const [parties, setParties] = useState([])
+  const [products, setProducts] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
-  const blankForm = () => ({ party: '', date: new Date().toISOString().slice(0, 10), items: [{ product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }], discount_percent: 0, tax_percent: 0, notes: '' })
+  const blankForm = () => ({ party: '', date: new Date().toISOString().slice(0, 10), items: [{ product: null, product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }], discount_percent: 0, tax_percent: 0, notes: '' })
   const [form, setForm] = useState(blankForm())
 
   const fetchList = () => api.get('/api/invoicing/quotations/').then(r => setList(r.data.results || r.data)).catch(() => {})
   useEffect(() => {
     fetchList()
     api.get('/api/invoicing/parties/?type=customer').then(r => setParties(r.data.results || r.data)).catch(() => {})
+    api.get('/api/inventory/products/?page_size=1000').then(r => setProducts(r.data.results || r.data)).catch(() => {})
   }, [])
 
-  const addItem = () => setForm(f => ({ ...f, items: [...f.items, { product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }] }))
+  const addItem = () => setForm(f => ({ ...f, items: [...f.items, { product: null, product_name: '', quantity: 1, unit_price: 0, unit: 'pcs' }] }))
   const removeItem = (i) => setForm(f => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }))
   const updateItem = (i, k, v) => setForm(f => ({ ...f, items: f.items.map((it, idx) => idx === i ? { ...it, [k]: v } : it) }))
+  // pick product from inventory → auto-fill price + link
+  const pickProduct = (i, val) => {
+    const match = products.find(p => (p.name || '').toLowerCase() === val.toLowerCase())
+    setForm(f => ({ ...f, items: f.items.map((it, idx) => idx === i
+      ? { ...it, product_name: val, product: match ? match.id : null, ...(match ? { unit_price: match.sale_price, unit: match.unit || it.unit } : {}) }
+      : it) }))
+  }
   const subtotal = form.items.reduce((s, it) => s + Number(it.quantity) * Number(it.unit_price), 0)
 
   const statusBadge = (s) => {
@@ -39,7 +48,7 @@ export default function Quotations() {
     try {
       const r = await api.get(`/api/invoicing/quotations/${q.id}/`); const d = r.data
       setForm({ party: d.party, date: d.date, discount_percent: d.discount_percent, tax_percent: d.tax_percent, notes: d.notes || '',
-        items: (d.items || []).map(it => ({ product_name: it.product_name, quantity: it.quantity, unit_price: it.unit_price, unit: it.unit || 'pcs' })) })
+        items: (d.items || []).map(it => ({ product: it.product || null, product_name: it.product_name, quantity: it.quantity, unit_price: it.unit_price, unit: it.unit || 'pcs' })) })
       setEditing(q.id); setShowForm(true)
     } catch { toast.error('Error') }
   }
@@ -127,10 +136,18 @@ export default function Quotations() {
                   <label className="label mb-0">{t('items_label')}</label>
                   <button type="button" onClick={addItem} className="text-sm text-primary-600 font-medium">{t('add_item')}</button>
                 </div>
+                <div className="grid grid-cols-12 gap-2 px-1 mb-1 text-[11px] font-semibold text-gray-400 uppercase">
+                  <span className="col-span-5">Product / Item</span>
+                  <span className="col-span-2">Qty</span>
+                  <span className="col-span-3">Unit price (Rs)</span>
+                  <span className="col-span-1 text-end">Total</span>
+                  <span className="col-span-1" />
+                </div>
+                <datalist id="qprodlist">{products.map(p => <option key={p.id} value={p.name}>{p.sale_price ? `Rs. ${p.sale_price}` : ''}</option>)}</datalist>
                 <div className="space-y-2">
                   {form.items.map((item, i) => (
                     <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                      <input className="input col-span-5" placeholder={t('product_name')} value={item.product_name} onChange={e => updateItem(i, 'product_name', e.target.value)} required />
+                      <input className="input col-span-5" list="qprodlist" placeholder={t('product_name')} value={item.product_name} onChange={e => pickProduct(i, e.target.value)} required />
                       <input type="number" className="input col-span-2" placeholder={t('qty')} value={item.quantity} onChange={e => updateItem(i, 'quantity', e.target.value)} min="0.01" step="0.01" required />
                       <input type="number" className="input col-span-3" placeholder={t('unit_price')} value={item.unit_price} onChange={e => updateItem(i, 'unit_price', e.target.value)} min="0" required />
                       <div className="col-span-1 text-end text-sm">{(Number(item.quantity) * Number(item.unit_price)).toLocaleString()}</div>

@@ -14,12 +14,14 @@ export default function InvoiceDetail({ invoice, onClose, onChanged }) {
   const [pay, setPay] = useState({ amount: '', method: 'cash', date: new Date().toISOString().slice(0, 10) })
   const [saving, setSaving] = useState(false)
   const [payments, setPayments] = useState([])
+  const [data, setData] = useState(invoice)   // live copy (updates after a payment)
+  const [justPaid, setJustPaid] = useState(false)
 
   const loadPayments = () => {
     if (!invoice?.id) return
     api.get(`/api/invoicing/payments/?invoice=${invoice.id}`).then(r => setPayments(r.data.results || r.data)).catch(() => {})
   }
-  useEffect(() => { loadPayments() }, [invoice?.id])
+  useEffect(() => { setData(invoice); setJustPaid(false); loadPayments() }, [invoice?.id])
 
   const delPayment = async (id) => {
     if (!confirm('Delete this payment? Balance dobara update ho jayega.')) return
@@ -29,7 +31,8 @@ export default function InvoiceDetail({ invoice, onClose, onChanged }) {
 
   if (!invoice) return null
 
-  const balance = Number(invoice.balance_due)
+  const cur = data || invoice
+  const balance = Number(cur.balance_due)
 
   const savePayment = async (e) => {
     e.preventDefault()
@@ -46,7 +49,11 @@ export default function InvoiceDetail({ invoice, onClose, onChanged }) {
       })
       toast.success(t('payment_saved'))
       onChanged && onChanged()
-      onClose()
+      // refresh the invoice so the receipt shows updated paid/balance, then show it
+      try { const r = await api.get(`/api/invoicing/invoices/${invoice.id}/`); setData(r.data) } catch { /* ignore */ }
+      loadPayments()
+      setPay({ ...pay, amount: '' })
+      setJustPaid(true)
     } catch { toast.error(t('payment_failed')) }
     finally { setSaving(false) }
   }
@@ -68,6 +75,17 @@ export default function InvoiceDetail({ invoice, onClose, onChanged }) {
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1"><X size={20} /></button>
           </div>
         </div>
+
+        {/* Payment received → receipt prompt */}
+        {justPaid && (
+          <div className="no-print mx-4 mt-3 rounded-xl bg-green-50 border border-green-200 p-3 flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-sm font-medium text-green-800">✓ {t('payment_saved')} — {balance > 0 ? `${t('wa_balance')}: ${money(cur.balance_due)}` : t('fully_paid')}</p>
+            <div className="flex gap-2">
+              <button onClick={() => window.print()} className="btn-primary py-1.5 px-3 text-sm"><Printer size={14} /> Print receipt</button>
+              <button onClick={() => openWhatsApp(cur.party_phone, invoiceMessage(t, cur))} className="btn-secondary py-1.5 px-3 text-sm text-green-700"><MessageCircle size={14} /> {t('whatsapp')}</button>
+            </div>
+          </div>
+        )}
 
         {/* Printable invoice */}
         <div id="print-area" className="p-6">
@@ -121,8 +139,8 @@ export default function InvoiceDetail({ invoice, onClose, onChanged }) {
               {Number(invoice.discount_amount) > 0 && <div className="flex justify-between"><span className="text-gray-500">{t('discount')}</span><span>- {money(invoice.discount_amount)}</span></div>}
               {Number(invoice.tax_amount) > 0 && <div className="flex justify-between"><span className="text-gray-500">{t('tax_gst')}</span><span>{money(invoice.tax_amount)}</span></div>}
               <div className="flex justify-between font-bold text-base border-t border-gray-200 pt-1"><span>{t('grand_total')}</span><span className="text-primary-700">{money(invoice.grand_total)}</span></div>
-              <div className="flex justify-between text-green-700"><span>{t('wa_paid')}</span><span>{money(invoice.paid_amount)}</span></div>
-              <div className="flex justify-between font-semibold text-red-600"><span>{t('wa_balance')}</span><span>{money(invoice.balance_due)}</span></div>
+              <div className="flex justify-between text-green-700"><span>{t('wa_paid')}</span><span>{money(cur.paid_amount)}</span></div>
+              <div className="flex justify-between font-semibold text-red-600"><span>{t('wa_balance')}</span><span>{money(cur.balance_due)}</span></div>
             </div>
           </div>
 

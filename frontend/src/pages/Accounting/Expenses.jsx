@@ -12,6 +12,7 @@ export default function Expenses() {
   const [expenses, setExpenses] = useState([])
   const [expAccounts, setExpAccounts] = useState([])
   const [cashAccounts, setCashAccounts] = useState([])
+  const [vendors, setVendors] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(blankForm())
@@ -22,6 +23,7 @@ export default function Expenses() {
     fetchExpenses()
     api.get('/api/accounting/accounts/?type=expense&postable=1').then(r => setExpAccounts(r.data.results || r.data)).catch(() => {})
     api.get('/api/accounting/accounts/?type=asset&postable=1').then(r => setCashAccounts(r.data.results || r.data)).catch(() => {})
+    api.get('/api/invoicing/parties/?type=vendor').then(r => setVendors(r.data.results || r.data)).catch(() => {})
   }, [])
 
   const openNew = () => { setEditing(null); setForm(blankForm()); setShowForm(true) }
@@ -116,7 +118,10 @@ export default function Expenses() {
                   {cashAccounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
               </div>
-              <div><label className="label">{t('exp_payee')}</label><input className="input" value={form.payee} onChange={e => setForm({ ...form, payee: e.target.value })} /></div>
+              <div><label className="label">{t('exp_payee')} (vendor)</label>
+                <input className="input" list="vendorlist" value={form.payee} onChange={e => setForm({ ...form, payee: e.target.value })} placeholder="Vendor select karein ya type karein" />
+                <datalist id="vendorlist">{vendors.map(v => <option key={v.id} value={v.name} />)}</datalist>
+              </div>
               <div><label className="label">{t('exp_notes')}</label><input className="input" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="btn-primary flex-1 justify-center">{editing ? 'Update' : t('save_payment')}</button>

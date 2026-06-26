@@ -20,7 +20,9 @@ class Product(models.Model):
         ('ltr', 'Litre'), ('mtr', 'Metre'), ('box', 'Box'),
         ('dz', 'Dozen'), ('set', 'Set'),
     ]
+    TYPE_CHOICES = [('good', 'Good (tracks stock)'), ('service', 'Service (no stock)')]
     name = models.CharField(max_length=200)
+    product_type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='good')
     sku = models.CharField(max_length=50, unique=True, blank=True, null=True)
     barcode = models.CharField(max_length=100, blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
@@ -50,7 +52,20 @@ class Product(models.Model):
 
     @property
     def low_stock(self):
-        return self.current_stock <= self.reorder_level
+        # services never "run low"; goods are low only when still > 0 but at/under reorder
+        if self.product_type != 'good':
+            return False
+        return 0 < self.current_stock <= self.reorder_level
+
+    @property
+    def stock_status(self):
+        if self.product_type != 'good':
+            return 'service'
+        if self.current_stock <= 0:
+            return 'out'
+        if self.current_stock <= self.reorder_level:
+            return 'low'
+        return 'ok'
 
 class StockMovement(models.Model):
     TYPE = [

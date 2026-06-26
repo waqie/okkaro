@@ -10,6 +10,7 @@ class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     stock_value = serializers.ReadOnlyField()
     low_stock = serializers.ReadOnlyField()
+    stock_status = serializers.ReadOnlyField()
     class Meta:
         model = Product
         fields = '__all__'
