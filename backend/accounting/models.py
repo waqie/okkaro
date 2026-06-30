@@ -15,6 +15,8 @@ class Account(models.Model):
     code = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=120)
     type = models.CharField(max_length=20, choices=TYPE)
+    account_number = models.CharField(max_length=60, blank=True)   # bank/IBAN/account no (optional)
+    bank_name = models.CharField(max_length=120, blank=True)       # e.g. Meezan Bank (optional)
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children')
     is_group = models.BooleanField(default=False)          # heading vs postable account
     opening_balance = models.DecimalField(max_digits=15, decimal_places=2, default=0)

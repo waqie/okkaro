@@ -4,7 +4,7 @@ import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
 
-const blank = () => ({ code: '', name: '', type: 'asset', opening_balance: 0 })
+const blank = () => ({ code: '', name: '', type: 'asset', opening_balance: 0, bank_name: '', account_number: '' })
 
 export default function ChartOfAccounts() {
   const { t } = useT()
@@ -56,7 +56,10 @@ export default function ChartOfAccounts() {
             {accounts.map(a => (
               <tr key={a.id} className={a.is_group ? 'bg-gray-50 font-semibold' : 'hover:bg-gray-50'}>
                 <td className="px-4 py-2 font-mono text-gray-400">{a.code}</td>
-                <td className={`px-4 py-2 ${a.is_group ? '' : 'ps-8'}`}>{a.name}</td>
+                <td className={`px-4 py-2 ${a.is_group ? '' : 'ps-8'}`}>
+                  {a.name}
+                  {(a.bank_name || a.account_number) && <span className="block text-xs text-gray-400">{[a.bank_name, a.account_number].filter(Boolean).join(' · ')}</span>}
+                </td>
                 <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeColor(a.type)}`}>{typeLabel(a.type)}</span></td>
               </tr>
             ))}
@@ -89,6 +92,14 @@ export default function ChartOfAccounts() {
                   <input className="input" value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} required />
                 </div>
               </div>
+              {form.type === 'asset' && <div className="grid grid-cols-2 gap-4">
+                <div><label className="label">Bank name (optional)</label>
+                  <input className="input" value={form.bank_name} onChange={e => setForm({ ...form, bank_name: e.target.value })} placeholder="e.g. Meezan Bank" />
+                </div>
+                <div><label className="label">Account / IBAN number (optional)</label>
+                  <input className="input" value={form.account_number} onChange={e => setForm({ ...form, account_number: e.target.value })} placeholder="e.g. PK00MEZN..." />
+                </div>
+              </div>}
               <div><label className="label">Opening balance (Rs)</label>
                 <input type="number" className="input" value={form.opening_balance} onChange={e => setForm({ ...form, opening_balance: e.target.value })} />
               </div>
