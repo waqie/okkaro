@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Printer, MessageCircle, X, Trash2 } from 'lucide-react'
+import { Printer, MessageCircle, X, Trash2, FileText } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
 import { openWhatsApp, invoiceMessage } from '../../utils/whatsapp'
+import { shareInvoicePdf } from '../../utils/invoicePdf'
 import { useAuthStore } from '../../store/authStore'
 
 const money = (v) => 'Rs. ' + Number(v || 0).toLocaleString()
@@ -33,6 +34,18 @@ export default function InvoiceDetail({ invoice, onClose, onChanged }) {
 
   const cur = data || invoice
   const balance = Number(cur.balance_due)
+
+  const sendPdf = async () => {
+    try {
+      const res = await shareInvoicePdf(cur, business)
+      if (res === 'downloaded') {
+        toast.success('PDF download ho gaya — WhatsApp chat mein attach kar dein')
+        openWhatsApp(cur.party_phone, invoiceMessage(t, cur))
+      } else if (res === 'shared') {
+        toast.success('PDF shared')
+      }
+    } catch { toast.error('PDF banane mein masla') }
+  }
 
   const savePayment = async (e) => {
     e.preventDefault()
@@ -68,6 +81,9 @@ export default function InvoiceDetail({ invoice, onClose, onChanged }) {
             <button onClick={() => window.print()} className="btn-secondary py-1.5 px-3 text-sm">
               <Printer size={15} /> {t('print_pdf')}
             </button>
+            <button onClick={sendPdf} className="btn-secondary py-1.5 px-3 text-sm text-green-600">
+              <FileText size={15} /> PDF on WhatsApp
+            </button>
             <button onClick={() => openWhatsApp(invoice.party_phone, invoiceMessage(t, invoice))}
               className="btn-secondary py-1.5 px-3 text-sm text-green-600">
               <MessageCircle size={15} /> {t('whatsapp')}
@@ -82,6 +98,7 @@ export default function InvoiceDetail({ invoice, onClose, onChanged }) {
             <p className="text-sm font-medium text-green-800">✓ {t('payment_saved')} — {balance > 0 ? `${t('wa_balance')}: ${money(cur.balance_due)}` : t('fully_paid')}</p>
             <div className="flex gap-2">
               <button onClick={() => window.print()} className="btn-primary py-1.5 px-3 text-sm"><Printer size={14} /> Print receipt</button>
+              <button onClick={sendPdf} className="btn-secondary py-1.5 px-3 text-sm text-green-700"><FileText size={14} /> PDF on WhatsApp</button>
               <button onClick={() => openWhatsApp(cur.party_phone, invoiceMessage(t, cur))} className="btn-secondary py-1.5 px-3 text-sm text-green-700"><MessageCircle size={14} /> {t('whatsapp')}</button>
             </div>
           </div>
