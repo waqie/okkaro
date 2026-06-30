@@ -66,21 +66,22 @@ export default function POS() {
     return res.data.id
   }
 
-  // warn (but don't block) if cart exceeds available stock
-  const checkStock = () => {
+  // items that exceed available stock (goods only) — block the sale
+  const overStock = () => {
     const over = []
     cart.forEach(it => {
       const p = products.find(pr => pr.id === it.product_id)
       if (p && p.product_type === 'good' && it.quantity > Number(p.current_stock)) {
-        over.push(`${p.name} (stock ${p.current_stock}, sale ${it.quantity})`)
+        over.push(`${p.name} (stock ${p.current_stock})`)
       }
     })
-    if (over.length) toast(`⚠ Stock kam hai: ${over.join(', ')}`, { duration: 5000, icon: '⚠️' })
+    return over
   }
 
   const completeSale = async () => {
     if (!cart.length) return
-    checkStock()
+    const over = overStock()
+    if (over.length) { toast.error(`Stock kam hai: ${over.join(', ')} — sale nahi ho sakti`, { duration: 6000 }); return }
     setBusy(true)
     try {
       const party = await ensureWalkIn()

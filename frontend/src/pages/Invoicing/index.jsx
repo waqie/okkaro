@@ -84,22 +84,26 @@ export default function Invoicing() {
     } catch { toast.error(t('load_failed')) }
   }
 
-  // warn (but don't block) if a sale exceeds available stock
-  const checkStock = () => {
-    if (form.invoice_type !== 'sale') return
+  // items that exceed available stock (sale + goods only)
+  const overStock = () => {
+    if (form.invoice_type !== 'sale') return []
     const over = []
     form.items.forEach(it => {
       const p = products.find(pr => pr.id === it.product)
       if (p && p.product_type === 'good' && Number(it.quantity) > Number(p.current_stock)) {
-        over.push(`${p.name} (stock ${p.current_stock}, sale ${it.quantity})`)
+        over.push(`${p.name} (stock ${p.current_stock})`)
       }
     })
-    if (over.length) toast(`⚠ Stock kam hai: ${over.join(', ')}`, { duration: 5000, icon: '⚠️' })
+    return over
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    checkStock()
+    const over = overStock()
+    if (over.length) {
+      if (!editing) { toast.error(`Stock kam hai: ${over.join(', ')} — sale nahi ho sakti`, { duration: 6000 }); return }
+      toast(`⚠ Stock kam hai: ${over.join(', ')}`, { duration: 5000, icon: '⚠️' })
+    }
     try {
       if (editing) { await api.patch(`/api/invoicing/invoices/${editing}/`, form); toast.success('Invoice updated') }
       else { await api.post('/api/invoicing/invoices/', form); toast.success(t('invoice_created')) }
