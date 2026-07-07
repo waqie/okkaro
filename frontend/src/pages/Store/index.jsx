@@ -15,9 +15,12 @@ export default function Store() {
   const [products, setProducts] = useState([])
   const [order, setOrder] = useState([])
 
+  const shopParam = new URLSearchParams(window.location.search).get('shop')
+  const q = shopParam ? `?shop=${encodeURIComponent(shopParam)}` : ''
+
   useEffect(() => {
-    axios.get(`${API}/api/store/info/`).then(r => setShop(r.data)).catch(() => {})
-    axios.get(`${API}/api/store/products/`).then(r => setProducts(r.data)).catch(() => {})
+    axios.get(`${API}/api/store/info/${q}`).then(r => setShop(r.data)).catch(() => {})
+    axios.get(`${API}/api/store/products/${q}`).then(r => setProducts(r.data)).catch(() => {})
   }, [])
 
   const add = (p) => setOrder(prev => {
@@ -65,8 +68,10 @@ export default function Store() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {products.map(p => (
               <div key={p.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 flex flex-col">
-                <div className="aspect-square bg-primary-50 rounded-lg flex items-center justify-center mb-2 text-primary-300">
-                  <ShoppingBag size={32} />
+                <div className="aspect-square bg-primary-50 rounded-lg flex items-center justify-center mb-2 text-primary-300 overflow-hidden">
+                  {p.image_base64
+                    ? <img src={p.image_base64} alt={p.name} className="w-full h-full object-cover" />
+                    : <ShoppingBag size={32} />}
                 </div>
                 <p className="font-medium text-gray-900 text-sm line-clamp-2 flex-1">{p.name}</p>
                 <p className="text-primary-700 font-bold mt-1">{money(p.sale_price)}</p>

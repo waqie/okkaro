@@ -10,14 +10,15 @@ export default function StoreManage() {
   const { t } = useT()
   const navigate = useNavigate()
   const [phone, setPhone] = useState(null)
+  const [schema, setSchema] = useState('')
   const [products, setProducts] = useState([])
 
   useEffect(() => {
-    api.get('/api/business/').then(r => setPhone(r.data.phone || '')).catch(() => setPhone(''))
+    api.get('/api/business/').then(r => { setPhone(r.data.phone || ''); setSchema(r.data.schema || '') }).catch(() => setPhone(''))
     api.get('/api/inventory/products/?page_size=1000').then(r => setProducts(r.data.results || r.data)).catch(() => {})
   }, [])
 
-  const link = `${window.location.origin}/store`
+  const link = `${window.location.origin}/store${schema ? `?shop=${schema}` : ''}`
   const copy = async () => { try { await navigator.clipboard.writeText(link); toast.success(t('link_copied')) } catch { toast(link) } }
   const shareWa = () => openWhatsApp('', `${t('store_intro')}\n${link}`)
 
@@ -52,7 +53,7 @@ export default function StoreManage() {
           <button onClick={copy} className="btn-secondary"><Copy size={15} /> {t('copy_link')}</button>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <a href="/store" target="_blank" rel="noreferrer" className="btn-primary"><ExternalLink size={15} /> {t('store_open')}</a>
+          <a href={link} target="_blank" rel="noreferrer" className="btn-primary"><ExternalLink size={15} /> {t('store_open')}</a>
           <button onClick={shareWa} className="btn-secondary text-green-600"><Share2 size={15} /> {t('store_share_wa')}</button>
         </div>
       </div>

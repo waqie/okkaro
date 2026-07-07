@@ -45,10 +45,27 @@ export default function Inventory() {
   const [importing, setImporting] = useState(false)
   const fileRef = useRef(null)
   const [editing, setEditing] = useState(null)
-  const blankProduct = () => ({ name: '', product_type: 'good', sku: '', barcode: '', category_name: '', sale_price: '', purchase_price: '', current_stock: 0, reorder_level: 5, unit: 'pcs' })
+  const blankProduct = () => ({ name: '', product_type: 'good', sku: '', barcode: '', category_name: '', sale_price: '', purchase_price: '', current_stock: 0, reorder_level: 5, unit: 'pcs', image_base64: '' })
   const [form, setForm] = useState(blankProduct())
 
   const num = (v) => { const n = parseFloat(String(v).replace(/[^0-9.]/g, '')); return isNaN(n) ? 0 : n }
+
+  // resize an uploaded image to ~600px and store as a base64 data URL
+  const fileToImage = (file) => {
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const img = new Image()
+      img.onload = () => {
+        const max = 600, scale = Math.min(1, max / Math.max(img.width, img.height))
+        const c = document.createElement('canvas')
+        c.width = img.width * scale; c.height = img.height * scale
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height)
+        setForm(f => ({ ...f, image_base64: c.toDataURL('image/jpeg', 0.8) }))
+      }
+      img.src = ev.target.result
+    }
+    reader.readAsDataURL(file)
+  }
 
   const importFile = async (e) => {
     const file = e.target.files?.[0]
@@ -103,7 +120,7 @@ export default function Inventory() {
   const openNew = () => { setEditing(null); setForm(blankProduct()); setShowForm(true) }
   const openEdit = (p) => {
     setEditing(p.id)
-    setForm({ name: p.name, product_type: p.product_type || 'good', sku: p.sku || '', barcode: p.barcode || '', category_name: p.category_name || '', sale_price: p.sale_price, purchase_price: p.purchase_price, current_stock: p.current_stock, reorder_level: p.reorder_level, unit: p.unit })
+    setForm({ name: p.name, product_type: p.product_type || 'good', sku: p.sku || '', barcode: p.barcode || '', category_name: p.category_name || '', sale_price: p.sale_price, purchase_price: p.purchase_price, current_stock: p.current_stock, reorder_level: p.reorder_level, unit: p.unit, image_base64: p.image_base64 || '' })
     setShowForm(true)
   }
   const closeForm = () => { setShowForm(false); setEditing(null); setForm(blankProduct()) }
@@ -191,9 +208,12 @@ export default function Inventory() {
           {products.map(p => (
             <div key={p.id} className="card hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{p.name}</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">SKU: {p.sku || '—'} · {p.category_name || 'Uncategorized'}</p>
+                <div className="flex-1 flex items-start gap-2">
+                  {p.image_base64 && <img src={p.image_base64} alt={p.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />}
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{p.name}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">SKU: {p.sku || '—'} · {p.category_name || 'Uncategorized'}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {p.stock_status === 'out' && (
@@ -245,6 +265,18 @@ export default function Inventory() {
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 flex items-center gap-3">
+                  <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                    {form.image_base64 ? <img src={form.image_base64} alt="" className="w-full h-full object-cover" /> : <Package size={22} className="text-gray-300" />}
+                  </div>
+                  <div>
+                    <label className="btn-secondary cursor-pointer inline-flex">
+                      <Upload size={14} /> {form.image_base64 ? 'Change photo' : 'Add photo'}
+                      <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) fileToImage(f) }} />
+                    </label>
+                    {form.image_base64 && <button type="button" onClick={() => setForm(f => ({ ...f, image_base64: '' }))} className="ms-2 text-xs text-red-500">Remove</button>}
+                  </div>
+                </div>
                 <div className="col-span-2">
                   <label className="label">Product Name</label>
                   <input className="input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required placeholder="e.g. Basmati Rice 5kg" />

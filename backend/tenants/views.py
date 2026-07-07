@@ -41,6 +41,7 @@ class BusinessProfileView(APIView):
         is_branch = bool(getattr(t, 'parent_id', None)) if t else False
         head = (t.parent if (t and t.parent_id) else t)
         plan = getattr(head, 'plan', '') if head else ''
+        data['schema'] = getattr(t, 'schema_name', '') if t else ''
         data['is_branch'] = is_branch
         data['branch_label'] = getattr(t, 'branch_label', '') if t else ''
         data['can_add_branches'] = bool(plan == 'pro') or bool(request.user and request.user.is_superuser)
