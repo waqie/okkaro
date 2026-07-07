@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, CornerDownRight } from 'lucide-react'
+import { Plus, CornerDownRight, Trash2 } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
@@ -72,6 +72,12 @@ export default function ChartOfAccounts() {
     finally { setSaving(false) }
   }
 
+  const del = async (a) => {
+    if (!confirm(`Delete account "${a.name}"?`)) return
+    try { await api.delete(`/api/accounting/accounts/${a.id}/`); toast.success('Deleted'); fetchAccounts() }
+    catch (err) { toast.error(err.response?.data?.error || 'Could not delete') }
+  }
+
   const rows = tree()
 
   return (
@@ -103,7 +109,10 @@ export default function ChartOfAccounts() {
                 </td>
                 <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeColor(a.type)}`}>{typeLabel(a.type)}</span></td>
                 <td className="px-4 py-2 text-end">
-                  <button onClick={() => openNew(a)} title="Add sub-account" className="p-1 text-primary-600 hover:bg-primary-50 rounded"><Plus size={15} /></button>
+                  <div className="flex gap-1 justify-end">
+                    <button onClick={() => openNew(a)} title="Add sub-account" className="p-1 text-primary-600 hover:bg-primary-50 rounded"><Plus size={15} /></button>
+                    <button onClick={() => del(a)} title="Delete" className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 size={15} /></button>
+                  </div>
                 </td>
               </tr>
             ))}

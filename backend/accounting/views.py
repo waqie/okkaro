@@ -58,6 +58,15 @@ class AccountViewSet(viewsets.ModelViewSet):
             qs = qs.filter(is_group=False)
         return qs
 
+    def destroy(self, request, *args, **kwargs):
+        acc = self.get_object()
+        if acc.children.exists():
+            return Response({'error': 'This account has sub-accounts. Delete those first.'}, status=400)
+        if acc.lines.exists():
+            return Response({'error': 'This account has transactions and cannot be deleted.'}, status=400)
+        acc.delete()
+        return Response(status=204)
+
 
 class JournalEntryViewSet(viewsets.ModelViewSet):
     serializer_class = JournalEntrySerializer
