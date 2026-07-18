@@ -62,8 +62,15 @@ class AccountViewSet(viewsets.ModelViewSet):
         acc = self.get_object()
         if acc.children.exists():
             return Response({'error': 'This account has sub-accounts. Delete those first.'}, status=400)
+        force = request.query_params.get('force') == '1'
+        if acc.lines.exists() and not force:
+            # tell the frontend it needs a force-confirm
+            return Response({'error': 'has_transactions'}, status=409)
         if acc.lines.exists():
-            return Response({'error': 'This account has transactions and cannot be deleted.'}, status=400)
+            # force: remove whole journal entries that touch this account (keeps the
+            # remaining ledger balanced), then delete the account
+            entry_ids = list(acc.lines.values_list('entry_id', flat=True).distinct())
+            JournalEntry.objects.filter(id__in=entry_ids).delete()
         acc.delete()
         return Response(status=204)
 

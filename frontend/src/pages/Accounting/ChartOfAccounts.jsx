@@ -72,10 +72,18 @@ export default function ChartOfAccounts() {
     finally { setSaving(false) }
   }
 
-  const del = async (a) => {
-    if (!confirm(`Delete account "${a.name}"?`)) return
-    try { await api.delete(`/api/accounting/accounts/${a.id}/`); toast.success('Deleted'); fetchAccounts() }
-    catch (err) { toast.error(err.response?.data?.error || 'Could not delete') }
+  const del = async (a, force = false) => {
+    if (!force && !confirm(`Delete account "${a.name}"?`)) return
+    try {
+      await api.delete(`/api/accounting/accounts/${a.id}/${force ? '?force=1' : ''}`)
+      toast.success('Deleted'); fetchAccounts()
+    } catch (err) {
+      if (err.response?.status === 409) {
+        if (confirm(`"${a.name}" par transactions hain.\n\nForce delete is account ki saari ledger entries bhi hamesha ke liye hata dega — reports par asar par sakta hai.\n\nPhir bhi delete karein?`)) return del(a, true)
+        return
+      }
+      toast.error(err.response?.data?.error || 'Could not delete')
+    }
   }
 
   // accounts with transactions can’t be deleted — archive (hide) them instead
