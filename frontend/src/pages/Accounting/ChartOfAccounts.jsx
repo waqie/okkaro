@@ -72,18 +72,26 @@ export default function ChartOfAccounts() {
     finally { setSaving(false) }
   }
 
+  const [mergeFor, setMergeFor] = useState(null)
+  const [mergeTarget, setMergeTarget] = useState('')
+
   const del = async (a, force = false) => {
     if (!force && !confirm(`Delete account "${a.name}"?`)) return
     try {
       await api.delete(`/api/accounting/accounts/${a.id}/${force ? '?force=1' : ''}`)
       toast.success('Deleted'); fetchAccounts()
     } catch (err) {
-      if (err.response?.status === 409) {
-        if (confirm(`"${a.name}" has transactions.\n\nForce delete will also permanently remove all ledger entries linked to this account — this may affect your reports.\n\nDelete anyway?`)) return del(a, true)
-        return
-      }
+      if (err.response?.status === 409) { setMergeTarget(''); setMergeFor(a); return }  // has transactions → offer move/force
       toast.error(err.response?.data?.error || 'Could not delete')
     }
+  }
+
+  const moveAndDelete = async () => {
+    if (!mergeTarget) { toast.error('Pick an account to move transactions into'); return }
+    try {
+      await api.post(`/api/accounting/accounts/${mergeFor.id}/merge/`, { target: Number(mergeTarget) })
+      toast.success('Transactions moved & account deleted'); setMergeFor(null); fetchAccounts()
+    } catch (err) { toast.error(err.response?.data?.error || 'Error') }
   }
 
   // accounts with transactions can’t be deleted — archive (hide) them instead
@@ -135,6 +143,33 @@ export default function ChartOfAccounts() {
           </tbody>
         </table>
       </div>
+
+      {mergeFor && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-lg font-semibold">Delete “{mergeFor.name}”</h2>
+              <button onClick={() => setMergeFor(null)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-600">This account has transactions. Move them into another account, then this one will be deleted (recommended — keeps your reports correct).</p>
+              <div>
+                <label className="label">Move transactions to</label>
+                <select className="input" value={mergeTarget} onChange={e => setMergeTarget(e.target.value)}>
+                  <option value="">— Select account —</option>
+                  {accounts.filter(a => a.id !== mergeFor.id && !a.is_group).map(a => (
+                    <option key={a.id} value={a.id}>{a.code} · {a.name}</option>
+                  ))}
+                </select>
+              </div>
+              <button onClick={moveAndDelete} className="btn-primary w-full justify-center">Move &amp; delete</button>
+              <button onClick={() => { setMergeFor(null); del(mergeFor, true) }} className="w-full text-center text-xs text-red-500 hover:underline">
+                Or force delete (also removes its transactions)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {show && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">

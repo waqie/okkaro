@@ -1,5 +1,6 @@
 from decimal import Decimal
 from rest_framework import viewsets, filters
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Sum
@@ -73,6 +74,21 @@ class AccountViewSet(viewsets.ModelViewSet):
             JournalEntry.objects.filter(id__in=entry_ids).delete()
         acc.delete()
         return Response(status=204)
+
+    @action(detail=True, methods=['post'])
+    def merge(self, request, pk=None):
+        """Move this account's transactions into another account, then delete it."""
+        src = self.get_object()
+        if src.children.exists():
+            return Response({'error': 'Move or delete its sub-accounts first.'}, status=400)
+        target = Account.objects.filter(id=request.data.get('target')).first()
+        if not target or target.id == src.id:
+            return Response({'error': 'Pick a valid target account.'}, status=400)
+        JournalLine.objects.filter(account=src).update(account=target)
+        Expense.objects.filter(account=src).update(account=target)
+        Expense.objects.filter(paid_from=src).update(paid_from=target)
+        src.delete()
+        return Response({'ok': True, 'moved_to': target.id})
 
 
 class JournalEntryViewSet(viewsets.ModelViewSet):
