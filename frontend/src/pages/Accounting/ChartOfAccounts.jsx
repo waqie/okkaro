@@ -79,7 +79,7 @@ export default function ChartOfAccounts() {
       toast.success('Deleted'); fetchAccounts()
     } catch (err) {
       if (err.response?.status === 409) {
-        if (confirm(`"${a.name}" par transactions hain.\n\nForce delete is account ki saari ledger entries bhi hamesha ke liye hata dega — reports par asar par sakta hai.\n\nPhir bhi delete karein?`)) return del(a, true)
+        if (confirm(`"${a.name}" has transactions.\n\nForce delete will also permanently remove all ledger entries linked to this account — this may affect your reports.\n\nDelete anyway?`)) return del(a, true)
         return
       }
       toast.error(err.response?.data?.error || 'Could not delete')
@@ -150,7 +150,7 @@ export default function ChartOfAccounts() {
                   <option value="">— None (top level) —</option>
                   {rows.map(a => <option key={a.id} value={a.id}>{' '.repeat(a.depth * 2)}{a.code} · {a.name}</option>)}
                 </select>
-                <p className="text-xs text-gray-400 mt-1">Isko kisi account ke neeche rakhna ho to yahan choose karein (unlimited levels).</p>
+                <p className="text-xs text-gray-400 mt-1">Choose a parent to nest this account under it (unlimited levels).</p>
               </div>
               <div><label className="label">Account name</label>
                 <input className="input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required placeholder="e.g. Meezan Bank" />

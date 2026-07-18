@@ -33,7 +33,7 @@ export default function Vouchers() {
   const openNew = () => { setEditing(null); setForm(blankForm()); setShow(true) }
   const close = () => { setShow(false); setEditing(null); setForm(blankForm()) }
   const openEdit = (v) => {
-    if (v.source_model) { toast('Auto voucher — edit karne ke liye source document (invoice/payment/expense) badlein.', { icon: '🔒' }); return }
+    if (v.source_model) { toast('Auto voucher — to change it, edit the source document (invoice/payment/expense).', { icon: '🔒' }); return }
     setEditing(v.id)
     setForm({
       type: v.type, date: v.date, narration: v.narration || '',
@@ -61,7 +61,7 @@ export default function Vouchers() {
   }
 
   const del = async (v) => {
-    if (v.source_model) { toast('Auto voucher — source document se delete karein.', { icon: '🔒' }); return }
+    if (v.source_model) { toast('Auto voucher — delete it from the source document.', { icon: '🔒' }); return }
     if (!confirm(`Delete voucher ${v.number}?`)) return
     try { await api.delete(`/api/accounting/journal/${v.id}/`); toast.success('Deleted'); fetchList() }
     catch (err) { toast.error(err.response?.data?.error || 'Error') }
