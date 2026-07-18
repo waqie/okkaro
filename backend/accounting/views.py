@@ -72,6 +72,13 @@ class JournalEntryViewSet(viewsets.ModelViewSet):
     serializer_class = JournalEntrySerializer
     queryset = JournalEntry.objects.prefetch_related('lines__account', 'lines__party')
 
+    def destroy(self, request, *args, **kwargs):
+        e = self.get_object()
+        if e.source_model:
+            return Response({'error': f'This voucher was auto-created from a {e.source_model}. Edit or delete that {e.source_model} instead.'}, status=400)
+        e.delete()
+        return Response(status=204)
+
 
 class ExpenseViewSet(viewsets.ModelViewSet):
     serializer_class = ExpenseSerializer

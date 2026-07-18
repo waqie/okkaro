@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, CornerDownRight, Trash2 } from 'lucide-react'
+import { Plus, CornerDownRight, Trash2, Archive, ArchiveRestore } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
@@ -78,6 +78,12 @@ export default function ChartOfAccounts() {
     catch (err) { toast.error(err.response?.data?.error || 'Could not delete') }
   }
 
+  // accounts with transactions can’t be deleted — archive (hide) them instead
+  const toggleArchive = async (a) => {
+    try { await api.patch(`/api/accounting/accounts/${a.id}/`, { is_active: !a.is_active }); toast.success(a.is_active ? 'Archived' : 'Restored'); fetchAccounts() }
+    catch { toast.error('Error') }
+  }
+
   const rows = tree()
 
   return (
@@ -96,13 +102,14 @@ export default function ChartOfAccounts() {
           </thead>
           <tbody className="divide-y divide-gray-50">
             {rows.map(a => (
-              <tr key={a.id} className={a.is_group ? 'bg-gray-50/70 font-semibold' : 'hover:bg-gray-50'}>
+              <tr key={a.id} className={`${a.is_group ? 'bg-gray-50/70 font-semibold' : 'hover:bg-gray-50'} ${!a.is_active ? 'opacity-50' : ''}`}>
                 <td className="px-4 py-2 font-mono text-gray-400">{a.code}</td>
                 <td className="px-4 py-2">
                   <span className="flex items-center" style={{ paddingInlineStart: `${a.depth * 22}px` }}>
                     {a.depth > 0 && <CornerDownRight size={13} className="text-gray-300 me-1 shrink-0" />}
                     <span>
                       {a.name}
+                      {!a.is_active && <span className="ms-1 text-[10px] font-medium text-gray-500 bg-gray-100 rounded px-1 py-0.5 align-middle">archived</span>}
                       {(a.bank_name || a.account_number) && <span className="block text-xs font-normal text-gray-400">{[a.bank_name, a.account_number].filter(Boolean).join(' · ')}</span>}
                     </span>
                   </span>
@@ -111,7 +118,8 @@ export default function ChartOfAccounts() {
                 <td className="px-4 py-2 text-end">
                   <div className="flex gap-1 justify-end">
                     <button onClick={() => openNew(a)} title="Add sub-account" className="p-1 text-primary-600 hover:bg-primary-50 rounded"><Plus size={15} /></button>
-                    <button onClick={() => del(a)} title="Delete" className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 size={15} /></button>
+                    <button onClick={() => toggleArchive(a)} title={a.is_active ? 'Archive (hide)' : 'Restore'} className="p-1 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded">{a.is_active ? <Archive size={15} /> : <ArchiveRestore size={15} />}</button>
+                    <button onClick={() => del(a)} title="Delete (only if unused)" className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 size={15} /></button>
                   </div>
                 </td>
               </tr>
