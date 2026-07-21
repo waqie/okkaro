@@ -142,7 +142,7 @@ export default function ChartOfAccounts() {
           </thead>
           <tbody className="divide-y divide-gray-50">
             {rows.map(a => (
-              <tr key={a.id} className={`${a.is_group ? 'bg-gray-50/70 font-semibold' : 'hover:bg-gray-50'} ${!a.is_active ? 'opacity-50' : ''}`}>
+              <tr key={a.id} className={`${a.depth === 0 ? 'bg-gray-50/70 font-bold' : a.depth === 1 ? 'font-semibold hover:bg-gray-50' : 'hover:bg-gray-50'} ${!a.is_active ? 'opacity-50' : ''}`}>
                 <td className="px-4 py-2 font-mono text-gray-400">{a.code}</td>
                 <td className="px-4 py-2">
                   <span className="flex items-center" style={{ paddingInlineStart: `${a.depth * 22}px` }}>
