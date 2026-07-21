@@ -52,14 +52,15 @@ export default function ChartOfAccounts() {
       return String(n)
     }
 
-    if (parent.depth === 0) {                        // control account under an element
+    // Element codes end in "000" (1000, 2000 …) → their children are 1001, 1002 …
+    if (/000$/.test(String(parent.code))) {
       const base = parseInt(parent.code, 10) || 1000
       let i = 1
       while (used.has(String(base + i))) i++
       return String(base + i)
     }
 
-    let i = 1                                        // sub-account: parent code + 2 digits
+    let i = 1                                        // control/sub-account: parent code + 2 digits
     const mk = (x) => `${parent.code}${String(x).padStart(2, '0')}`
     while (used.has(mk(i))) i++
     return mk(i)
@@ -87,7 +88,11 @@ export default function ChartOfAccounts() {
       })
       toast.success('Account added')
       setShow(false); setForm(blank()); fetchAccounts()
-    } catch (err) { toast.error(err.response?.data ? JSON.stringify(err.response.data).slice(0, 140) : 'Error') }
+    } catch (err) {
+      const d = err.response?.data
+      if (d?.code) toast.error(`Code "${form.code}" already exists — try ${suggestCode(form.parent)}`)
+      else toast.error(d ? JSON.stringify(d).slice(0, 140) : 'Error')
+    }
     finally { setSaving(false) }
   }
 
