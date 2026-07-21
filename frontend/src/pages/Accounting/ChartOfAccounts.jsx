@@ -36,14 +36,33 @@ export default function ChartOfAccounts() {
     return flat
   }
 
+  // Standard chart-of-accounts numbering:
+  //   Element (top level)        → 1000, 2000, 3000 …
+  //   Control account (level 2)  → 1001, 1002, 1003 …
+  //   Sub-account (level 3+)     → 100101, 100102 … then 10010101 …
   const suggestCode = (parentId) => {
-    const parent = accounts.find(a => a.id === Number(parentId))
-    if (parent) {
-      const kids = accounts.filter(a => a.parent === parent.id)
-      return `${parent.code}${String(kids.length + 1).padStart(2, '0')}`
+    const used = new Set(accounts.map(a => String(a.code)))
+    const flat = tree()
+    const parent = flat.find(a => a.id === Number(parentId))
+
+    if (!parent) {                                   // new element
+      const tops = accounts.filter(a => !a.parent).map(a => parseInt(a.code, 10)).filter(n => !isNaN(n))
+      let n = tops.length ? (Math.floor(Math.max(...tops) / 1000) + 1) * 1000 : 1000
+      while (used.has(String(n))) n += 1000
+      return String(n)
     }
-    const nums = accounts.map(a => parseInt(a.code, 10)).filter(n => !isNaN(n))
-    return String((nums.length ? Math.max(...nums) : 1000) + 1)
+
+    if (parent.depth === 0) {                        // control account under an element
+      const base = parseInt(parent.code, 10) || 1000
+      let i = 1
+      while (used.has(String(base + i))) i++
+      return String(base + i)
+    }
+
+    let i = 1                                        // sub-account: parent code + 2 digits
+    const mk = (x) => `${parent.code}${String(x).padStart(2, '0')}`
+    while (used.has(mk(i))) i++
+    return mk(i)
   }
 
   const openNew = (parentAcc = null) => {
@@ -204,6 +223,7 @@ export default function ChartOfAccounts() {
                   <input className="input" value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} required />
                 </div>
               </div>
+              <p className="text-xs text-gray-400 -mt-2">Numbering: element <b>1000</b> → control account <b>1001</b> → sub-account <b>100101</b> → <b>10010101</b>. Code is suggested automatically from the parent.</p>
               <label className="flex items-center gap-2 text-sm text-gray-700">
                 <input type="checkbox" checked={form.is_group} onChange={e => setForm({ ...form, is_group: e.target.checked })} />
                 Heading / group only (holds sub-accounts, no transactions)
