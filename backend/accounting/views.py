@@ -49,6 +49,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     serializer_class = AccountSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['code', 'name']
+    pagination_class = None      # the chart of accounts is a tree — always return all
 
     def get_queryset(self):
         qs = Account.objects.all()

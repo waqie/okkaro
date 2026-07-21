@@ -106,6 +106,7 @@ export default function Inventory() {
     setLoading(true)
     try {
       const params = new URLSearchParams()
+      params.append('page_size', '500')
       if (search) params.append('search', search)
       if (lowStock) params.append('low_stock', 'true')
       const res = await api.get(`/api/inventory/products/?${params}`)
