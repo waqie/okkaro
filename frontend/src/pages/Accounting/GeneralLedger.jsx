@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../../api/axios'
 import { useT } from '../../i18n'
+import { sortAccountsTree, acctLabel } from '../../utils/accounts'
 
 const money = (v) => 'Rs. ' + Number(v || 0).toLocaleString()
 
@@ -11,7 +12,7 @@ export default function GeneralLedger() {
   const [data, setData] = useState(null)
 
   useEffect(() => {
-    api.get('/api/accounting/accounts/?postable=1').then(r => setAccounts(r.data.results || r.data)).catch(() => {})
+    api.get('/api/accounting/accounts/').then(r => setAccounts(sortAccountsTree(r.data.results || r.data))).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function GeneralLedger() {
       <div className="card p-4">
         <select className="input max-w-md" value={code} onChange={e => setCode(e.target.value)}>
           <option value="">{t('select_account')}</option>
-          {accounts.map(a => <option key={a.id} value={a.code}>{a.code} · {a.name}</option>)}
+          {accounts.map(a => <option key={a.id} value={a.code} disabled={a.is_group} style={a.is_group ? { fontWeight: 700, color: '#6b7280' } : {}}>{acctLabel(a)}</option>)}
         </select>
       </div>
 

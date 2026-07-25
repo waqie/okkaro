@@ -3,6 +3,7 @@ import { Plus, BookText, Trash2, Eye, Pencil } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
+import { sortAccountsTree, acctLabel } from '../../utils/accounts'
 
 const money = (v) => 'Rs. ' + Number(v || 0).toLocaleString()
 
@@ -19,7 +20,7 @@ export default function Vouchers() {
   const fetchList = () => api.get('/api/accounting/journal/').then(r => setList(r.data.results || r.data)).catch(() => {})
   useEffect(() => {
     fetchList()
-    api.get('/api/accounting/accounts/?postable=1').then(r => setAccounts(r.data.results || r.data)).catch(() => {})
+    api.get('/api/accounting/accounts/').then(r => setAccounts(sortAccountsTree(r.data.results || r.data))).catch(() => {})
   }, [])
 
   const setLine = (i, k, v) => setForm(f => ({ ...f, lines: f.lines.map((l, idx) => idx === i ? { ...l, [k]: v } : l) }))
@@ -166,7 +167,7 @@ export default function Vouchers() {
                   <div key={i} className="grid grid-cols-12 gap-2 items-center">
                     <select className="input col-span-6" value={l.account} onChange={e => setLine(i, 'account', e.target.value)}>
                       <option value="">—</option>
-                      {accounts.map(a => <option key={a.id} value={a.id}>{a.code} · {a.name}</option>)}
+                      {accounts.map(a => <option key={a.id} value={a.id} disabled={a.is_group} style={a.is_group ? { fontWeight: 700, color: '#6b7280' } : {}}>{acctLabel(a)}</option>)}
                     </select>
                     <input type="number" className="input col-span-3 text-end" placeholder="0" value={l.debit} onChange={e => setLine(i, 'debit', e.target.value)} />
                     <input type="number" className="input col-span-2 text-end" placeholder="0" value={l.credit} onChange={e => setLine(i, 'credit', e.target.value)} />
