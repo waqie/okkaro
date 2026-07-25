@@ -9,6 +9,7 @@ router.register(r'expenses', views.ExpenseViewSet, basename='expense')
 
 urlpatterns = [
     path('seed/', views.SeedAccountsView.as_view()),
+    path('chart/save-as-default/', views.SaveChartTemplateView.as_view()),
     path('vouchers/', views.VoucherView.as_view()),
     path('reports/trial-balance/', views.TrialBalanceView.as_view()),
     path('reports/profit-loss/', views.ProfitLossView.as_view()),

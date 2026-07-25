@@ -120,6 +120,30 @@ class SeedAccountsView(APIView):
         return Response({'created': created, 'message': 'Chart of accounts ready'})
 
 
+class SaveChartTemplateView(APIView):
+    """Superuser: snapshot THIS business's chart of accounts as the default
+    template that new businesses will be seeded with."""
+    def post(self, request):
+        if not (request.user and request.user.is_superuser):
+            return Response({'error': 'forbidden'}, status=403)
+        from django.db import connection
+        code_by_id = {a.id: a.code for a in Account.objects.all()}
+        data = []
+        for a in Account.objects.all().order_by('code'):
+            data.append({
+                'code': a.code, 'name': a.name, 'type': a.type, 'is_group': a.is_group,
+                'parent_code': code_by_id.get(a.parent_id),
+                'bank_name': a.bank_name, 'account_number': a.account_number,
+                'opening_balance': str(a.opening_balance or 0),
+            })
+        if not data:
+            return Response({'error': 'This chart is empty.'}, status=400)
+        connection.set_schema_to_public()
+        from tenants.models import ChartTemplate
+        ChartTemplate.objects.create(accounts=data, note=request.data.get('note', ''))
+        return Response({'saved': len(data)})
+
+
 class VoucherView(APIView):
     """Create a manual double-entry voucher (Journal/Receipt/Payment/Contra)."""
     def post(self, request):

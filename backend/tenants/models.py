@@ -50,3 +50,14 @@ class Tenant(TenantMixin):
 
 class Domain(DomainMixin):
     pass
+
+
+class ChartTemplate(models.Model):
+    """A saved chart of accounts (from one business) used to seed NEW businesses.
+    Lives in the public schema; the latest row is the active template."""
+    accounts = models.JSONField(default=list)   # [{code,name,type,is_group,parent_code,bank_name,account_number,opening_balance}]
+    note = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-id']

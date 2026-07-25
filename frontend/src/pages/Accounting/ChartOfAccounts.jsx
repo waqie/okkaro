@@ -1,20 +1,29 @@
 import { useState, useEffect } from 'react'
-import { Plus, CornerDownRight, Trash2, Archive, ArchiveRestore } from 'lucide-react'
+import { Plus, CornerDownRight, Trash2, Archive, ArchiveRestore, Pencil } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 import { useT } from '../../i18n'
+import { useAuthStore } from '../../store/authStore'
 
 const blank = () => ({ code: '', name: '', type: 'asset', parent: '', is_group: false, opening_balance: 0, bank_name: '', account_number: '' })
 
 export default function ChartOfAccounts() {
   const { t } = useT()
+  const { user } = useAuthStore()
   const [accounts, setAccounts] = useState([])
   const [show, setShow] = useState(false)
+  const [editing, setEditing] = useState(null)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState(blank())
 
   const fetchAccounts = () => api.get('/api/accounting/accounts/').then(r => setAccounts(r.data.results || r.data)).catch(() => {})
   useEffect(() => { fetchAccounts() }, [])
+
+  const setAsDefault = async () => {
+    if (!confirm('Save THIS chart of accounts as the default for every NEW business you create? (Existing businesses stay unchanged.)')) return
+    try { const r = await api.post('/api/accounting/chart/save-as-default/'); toast.success(`Saved as default (${r.data.saved} accounts)`) }
+    catch (err) { toast.error(err.response?.data?.error || 'Error') }
+  }
 
   const typeLabel = (ty) => ({ asset: t('ty_asset'), liability: t('ty_liability'), equity: t('ty_equity'), income: t('ty_income'), expense: t('ty_expense') }[ty] || ty)
   const typeColor = (ty) => ({ asset: 'text-blue-700 bg-blue-50', liability: 'text-purple-700 bg-purple-50', equity: 'text-gray-700 bg-gray-100', income: 'text-green-700 bg-green-50', expense: 'text-red-700 bg-red-50' }[ty] || 'bg-gray-100')
@@ -67,6 +76,7 @@ export default function ChartOfAccounts() {
   }
 
   const openNew = (parentAcc = null) => {
+    setEditing(null)
     setForm({
       ...blank(),
       parent: parentAcc ? parentAcc.id : '',
@@ -76,21 +86,27 @@ export default function ChartOfAccounts() {
     setShow(true)
   }
 
+  const openEdit = (a) => {
+    setEditing(a.id)
+    setForm({
+      code: a.code, name: a.name, type: a.type, parent: a.parent || '',
+      is_group: a.is_group, opening_balance: a.opening_balance || 0,
+      bank_name: a.bank_name || '', account_number: a.account_number || '',
+    })
+    setShow(true)
+  }
+
   const save = async (e) => {
     e.preventDefault()
     setSaving(true)
+    const payload = { ...form, parent: form.parent || null, is_active: true, opening_balance: Number(form.opening_balance) || 0 }
     try {
-      await api.post('/api/accounting/accounts/', {
-        ...form,
-        parent: form.parent || null,
-        is_active: true,
-        opening_balance: Number(form.opening_balance) || 0,
-      })
-      toast.success('Account added')
-      setShow(false); setForm(blank()); fetchAccounts()
+      if (editing) { await api.patch(`/api/accounting/accounts/${editing}/`, payload); toast.success('Account updated') }
+      else { await api.post('/api/accounting/accounts/', payload); toast.success('Account added') }
+      setShow(false); setEditing(null); setForm(blank()); fetchAccounts()
     } catch (err) {
       const d = err.response?.data
-      if (d?.code) toast.error(`Code "${form.code}" already exists — try ${suggestCode(form.parent)}`)
+      if (d?.code) toast.error(`Code "${form.code}" already exists`)
       else toast.error(d ? JSON.stringify(d).slice(0, 140) : 'Error')
     }
     finally { setSaving(false) }
@@ -130,7 +146,10 @@ export default function ChartOfAccounts() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div><h1 className="text-2xl font-bold text-gray-900">{t('nav_accounts')}</h1><p className="text-gray-500 text-sm mt-1">{t('coa_subtitle')}</p></div>
-        <button onClick={() => openNew()} className="btn-primary"><Plus size={16} /> Add Account</button>
+        <div className="flex gap-2">
+          {user?.is_superuser && <button onClick={setAsDefault} className="btn-secondary">Set as default for new businesses</button>}
+          <button onClick={() => openNew()} className="btn-primary"><Plus size={16} /> Add Account</button>
+        </div>
       </div>
 
       <p className="text-xs text-gray-400 -mt-2">Add a new bank, cash, or any ledger account. Use the “＋” on a row to add a sub-account under it — nest as deep as you like.</p>
@@ -158,6 +177,7 @@ export default function ChartOfAccounts() {
                 <td className="px-4 py-2 text-end">
                   <div className="flex gap-1 justify-end">
                     <button onClick={() => openNew(a)} title="Add sub-account" className="p-1 text-primary-600 hover:bg-primary-50 rounded"><Plus size={15} /></button>
+                    <button onClick={() => openEdit(a)} title="Edit" className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Pencil size={15} /></button>
                     <button onClick={() => toggleArchive(a)} title={a.is_active ? 'Archive (hide)' : 'Restore'} className="p-1 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded">{a.is_active ? <Archive size={15} /> : <ArchiveRestore size={15} />}</button>
                     <button onClick={() => del(a)} title="Delete (only if unused)" className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 size={15} /></button>
                   </div>
@@ -199,8 +219,8 @@ export default function ChartOfAccounts() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-auto">
             <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-lg font-semibold">Add Account</h2>
-              <button onClick={() => setShow(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+              <h2 className="text-lg font-semibold">{editing ? 'Edit Account' : 'Add Account'}</h2>
+              <button onClick={() => { setShow(false); setEditing(null) }} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
             </div>
             <form onSubmit={save} className="p-6 space-y-4">
               <div><label className="label">Parent account (optional)</label>
@@ -217,7 +237,7 @@ export default function ChartOfAccounts() {
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="label">Type</label>
                   <select className="input" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
-                    <option value="asset">Asset (bank / cash)</option>
+                    <option value="asset">Asset</option>
                     <option value="liability">Liability</option>
                     <option value="equity">Equity</option>
                     <option value="income">Income</option>
@@ -245,8 +265,8 @@ export default function ChartOfAccounts() {
                 <input type="number" className="input" value={form.opening_balance} onChange={e => setForm({ ...form, opening_balance: e.target.value })} />
               </div>}
               <div className="flex gap-3 pt-2">
-                <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center disabled:opacity-60">{saving ? '...' : 'Add Account'}</button>
-                <button type="button" onClick={() => setShow(false)} className="btn-secondary flex-1 justify-center">Cancel</button>
+                <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center disabled:opacity-60">{saving ? '...' : (editing ? 'Update' : 'Add Account')}</button>
+                <button type="button" onClick={() => { setShow(false); setEditing(null) }} className="btn-secondary flex-1 justify-center">Cancel</button>
               </div>
             </form>
           </div>

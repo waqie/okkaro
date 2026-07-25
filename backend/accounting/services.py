@@ -46,15 +46,40 @@ DEFAULT_CHART = [
 ]
 
 
+def _active_template():
+    """The saved chart template (from public schema), if any."""
+    try:
+        from tenants.models import ChartTemplate
+        return ChartTemplate.objects.order_by('-id').first()
+    except Exception:
+        return None
+
+
 def seed_default_accounts():
-    """Create the default chart of accounts if it doesn't exist yet."""
+    """Seed a business's chart of accounts.
+
+    Uses the saved ChartTemplate (an admin-approved chart from a real business)
+    if one exists; otherwise the built-in default. Parents are created before
+    children (shorter codes first)."""
+    tpl = _active_template()
+    if tpl and tpl.accounts:
+        rows = [(a['code'], a['name'], a['type'], a.get('is_group', False),
+                 a.get('parent_code'), a) for a in tpl.accounts]
+    else:
+        rows = [(c, n, ty, g, p, None) for (c, n, ty, g, p) in DEFAULT_CHART]
+
     created = 0
-    for code, name, type_, is_group, parent_code in DEFAULT_CHART:
+    for code, name, type_, is_group, parent_code, extra in sorted(rows, key=lambda x: (len(str(x[0])), str(x[0]))):
         parent = Account.objects.filter(code=parent_code).first() if parent_code else None
-        _, was_created = Account.objects.get_or_create(
-            code=code,
-            defaults=dict(name=name, type=type_, is_group=is_group, parent=parent),
-        )
+        defaults = dict(name=name, type=type_, is_group=is_group, parent=parent)
+        if extra:
+            defaults['bank_name'] = extra.get('bank_name', '') or ''
+            defaults['account_number'] = extra.get('account_number', '') or ''
+            try:
+                defaults['opening_balance'] = Decimal(str(extra.get('opening_balance') or 0))
+            except Exception:
+                pass
+        _, was_created = Account.objects.get_or_create(code=code, defaults=defaults)
         if was_created:
             created += 1
     return created
@@ -62,6 +87,42 @@ def seed_default_accounts():
 
 def acc(code):
     return Account.objects.filter(code=code).first()
+
+
+# ---- Resolve well-known accounts within the CURRENT business ----
+# Prefer the standard code; if that code isn't in this chart (e.g. a custom
+# consultant chart), find the right account by name. Keeps auto-posting working
+# regardless of the numbering scheme.
+_DEFAULT_CODE = {'ar': AR, 'ap': AP, 'cash': CASH, 'bank': BANK,
+                 'tax': TAX_PAYABLE, 'sales': SALES, 'purchases': PURCHASES,
+                 'discount': DISCOUNT_GIVEN}
+
+
+def _find(type_, keywords, exclude=()):
+    for a in Account.objects.filter(is_group=False, type=type_).order_by('code'):
+        n = (a.name or '').lower()
+        if any(k in n for k in keywords) and not any(e in n for e in exclude):
+            return a
+    return None
+
+
+def code_for(role):
+    """Return the account CODE for a posting role in the current business."""
+    default = _DEFAULT_CODE.get(role)
+    if default and acc(default):
+        return default
+    finder = {
+        'ar': lambda: _find('asset', ('receivable',)),
+        'ap': lambda: _find('liability', ('payable',), exclude=('tax',)),
+        'cash': lambda: _find('asset', ('cash in hand', 'cash-in-hand')) or _find('asset', ('cash',), exclude=('bank',)),
+        'bank': lambda: _find('asset', ('bank',)),
+        'tax': lambda: _find('liability', ('tax',)),
+        'sales': lambda: _find('income', ('sale',)),
+        'purchases': lambda: _find('expense', ('purchase', 'cost of good')),
+        'discount': lambda: _find('expense', ('discount',)),
+    }.get(role)
+    a = finder() if finder else None
+    return a.code if a else default
 
 
 def next_number(prefix):
@@ -109,7 +170,7 @@ def post_entry(type_, lines, date=None, narration='', reference='', source_model
 
 
 def cash_or_bank_code(method):
-    return CASH if method == 'cash' else BANK
+    return code_for('cash') if method == 'cash' else code_for('bank')
 
 
 def reverse_entry(source_model, source_id):

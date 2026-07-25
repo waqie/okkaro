@@ -23,15 +23,15 @@ def post_invoice(sender, instance, **kwargs):
         svc.reverse_entry('invoice', inv.id)
         if not inv.grand_total or float(inv.grand_total) <= 0:
             return
-        if not svc.acc(svc.SALES):   # chart not seeded yet
+        if not svc.code_for('sales') or not svc.acc(svc.code_for('sales')):   # chart not seeded yet
             return
 
         if inv.invoice_type == 'sale':
             lines = [
-                {'code': svc.AR, 'debit': inv.grand_total, 'party': inv.party},
-                {'code': svc.DISCOUNT_GIVEN, 'debit': inv.discount_amount},
-                {'code': svc.SALES, 'credit': inv.subtotal},
-                {'code': svc.TAX_PAYABLE, 'credit': inv.tax_amount},
+                {'code': svc.code_for('ar'), 'debit': inv.grand_total, 'party': inv.party},
+                {'code': svc.code_for('discount'), 'debit': inv.discount_amount},
+                {'code': svc.code_for('sales'), 'credit': inv.subtotal},
+                {'code': svc.code_for('tax'), 'credit': inv.tax_amount},
             ]
             svc.post_entry('sales', lines, date=inv.date,
                            narration=f"Sale invoice {inv.invoice_number}",
@@ -39,9 +39,9 @@ def post_invoice(sender, instance, **kwargs):
                            source_model='invoice', source_id=inv.id)
         else:  # purchase
             lines = [
-                {'code': svc.PURCHASES, 'debit': (inv.subtotal - inv.discount_amount)},
-                {'code': svc.TAX_PAYABLE, 'debit': inv.tax_amount},
-                {'code': svc.AP, 'credit': inv.grand_total, 'party': inv.party},
+                {'code': svc.code_for('purchases'), 'debit': (inv.subtotal - inv.discount_amount)},
+                {'code': svc.code_for('tax'), 'debit': inv.tax_amount},
+                {'code': svc.code_for('ap'), 'credit': inv.grand_total, 'party': inv.party},
             ]
             svc.post_entry('purchase', lines, date=inv.date,
                            narration=f"Purchase invoice {inv.invoice_number}",
@@ -75,11 +75,11 @@ def post_payment(sender, instance, **kwargs):
     try:
         pmt = instance
         svc.reverse_entry('payment', pmt.id)  # re-post on edit
-        if pmt.amount and float(pmt.amount) > 0 and svc.acc(svc.AR):
+        if pmt.amount and float(pmt.amount) > 0 and svc.acc(svc.code_for('ar')):
             # money received from a customer: Dr Cash/Bank, Cr Accounts Receivable
             lines = [
                 {'code': svc.cash_or_bank_code(pmt.method), 'debit': pmt.amount},
-                {'code': svc.AR, 'credit': pmt.amount, 'party': pmt.party},
+                {'code': svc.code_for('ar'), 'credit': pmt.amount, 'party': pmt.party},
             ]
             svc.post_entry('receipt', lines, date=pmt.date,
                            narration=f"Payment received ({pmt.get_method_display()})",
