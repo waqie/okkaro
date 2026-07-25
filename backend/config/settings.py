@@ -108,8 +108,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    'DEFAULT_PAGINATION_CLASS': 'config.pagination.DefaultPagination',
-    'PAGE_SIZE': 20,
+    # Pagination disabled globally — the app reads full lists (with its own
+    # search/filters), so list endpoints always return every row. This permanently
+    # avoids the "only 20 rows" bug in dropdowns/pickers.
+    'DEFAULT_PAGINATION_CLASS': None,
 }
 
 SIMPLE_JWT = {
