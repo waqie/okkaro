@@ -4,45 +4,85 @@ from django.db import transaction
 from django.utils import timezone
 from .models import Account, JournalEntry, JournalLine
 
-# ---- Well-known account codes used by auto-posting ----
-AR = '1100'          # Accounts Receivable (customers owe us)
-AP = '2100'          # Accounts Payable (we owe suppliers)
-CASH = '1010'        # Cash in Hand
-BANK = '1020'        # Bank
-TAX_PAYABLE = '2200'  # Sales tax / GST payable
-SALES = '4100'       # Sales income
-PURCHASES = '5100'   # Purchases / Cost of goods
-DISCOUNT_GIVEN = '5050'  # Discount allowed (expense)
+# ---- Well-known account codes used by auto-posting (match the default chart) ----
+AR = '100302'          # Accounts Receivables
+AP = '200205'          # Payable to Suppliers
+CASH = '100307'        # Cash In Hand
+BANK = '100306'        # Cash at Banks
+TAX_PAYABLE = '200202'  # WHT Payables
+SALES = '4001'         # Sale of Goods
+PURCHASES = '500101'   # Purchases
+DISCOUNT_GIVEN = '500103'  # Discounts & rebates
 
-# code, name, type, is_group, parent_code
+# Standard chart of accounts. code, name, type, is_group, parent_code
 DEFAULT_CHART = [
     ('1000', 'Assets', 'asset', True, None),
-    ('1010', 'Cash in Hand', 'asset', False, '1000'),
-    ('1020', 'Bank', 'asset', False, '1000'),
-    ('1100', 'Accounts Receivable', 'asset', False, '1000'),
-    ('1200', 'Inventory', 'asset', False, '1000'),
+    ('1001', 'Long Term Assets', 'asset', True, '1000'),
+    ('100101', 'Land & Building Owned', 'asset', False, '1001'),
+    ('100102', 'Land & Building Leasehold', 'asset', False, '1001'),
+    ('100103', 'Furniture & Fixtures', 'asset', False, '1001'),
+    ('100104', 'Electrical Equipment', 'asset', False, '1001'),
+    ('100105', 'Office Equipment', 'asset', False, '1001'),
+    ('100106', 'Motor Vehicles', 'asset', False, '1001'),
+    ('100107', 'Computer Equipment', 'asset', False, '1001'),
+    ('100108', 'Accumulated Depreciation', 'asset', False, '1001'),
+    ('1002', 'Current Assets', 'asset', True, '1000'),
+    ('100301', 'Inventory/Stock in Trade', 'asset', False, '1002'),
+    ('100302', 'Accounts Receivables', 'asset', False, '1002'),
+    ('100303', 'Advance to Suppliers', 'asset', False, '1002'),
+    ('100304', 'Pre-Paid Expenses', 'asset', False, '1002'),
+    ('100305', 'Security Deposits', 'asset', False, '1002'),
+    ('100306', 'Cash at Banks', 'asset', False, '1002'),
+    ('100307', 'Cash In Hand', 'asset', False, '1002'),
+    ('100308', 'Other Assets', 'asset', False, '1002'),
 
     ('2000', 'Liabilities', 'liability', True, None),
-    ('2100', 'Accounts Payable', 'liability', False, '2000'),
-    ('2200', 'Sales Tax Payable', 'liability', False, '2000'),
+    ('2001', 'Long Term Liabilities', 'liability', True, '2000'),
+    ('200101', 'Bank Borrowings', 'liability', False, '2001'),
+    ('2002', 'Current Liabilities', 'liability', True, '2000'),
+    ('200201', 'Accrued Salaries', 'liability', False, '2002'),
+    ('200202', 'WHT Payables', 'liability', False, '2002'),
+    ('200203', 'Advance from Customers', 'liability', False, '2002'),
+    ('200204', 'Accrued Expenses', 'liability', False, '2002'),
+    ('200205', 'Payable to Suppliers', 'liability', False, '2002'),
+    ('200206', 'Utility Bills Payable', 'liability', False, '2002'),
+    ('200207', 'Other Payables', 'liability', False, '2002'),
 
     ('3000', 'Equity', 'equity', True, None),
-    ('3100', 'Capital', 'equity', False, '3000'),
-    ('3900', 'Retained Earnings', 'equity', False, '3000'),
+    ('3001', 'Paid Up Capital', 'equity', False, '3000'),
+    ('3002', 'Retained Earnings', 'equity', False, '3000'),
 
     ('4000', 'Income', 'income', True, None),
-    ('4100', 'Sales', 'income', False, '4000'),
-    ('4900', 'Other Income', 'income', False, '4000'),
+    ('4001', 'Sale of Goods', 'income', False, '4000'),
+    ('4002', 'Fee & Commissions', 'income', False, '4000'),
+    ('4003', 'Other Income', 'income', False, '4000'),
 
     ('5000', 'Expenses', 'expense', True, None),
-    ('5050', 'Discount Allowed', 'expense', False, '5000'),
-    ('5100', 'Purchases', 'expense', False, '5000'),
-    ('5200', 'Rent', 'expense', False, '5000'),
-    ('5300', 'Salaries', 'expense', False, '5000'),
-    ('5400', 'Utilities (Bijli/Gas/Phone)', 'expense', False, '5000'),
-    ('5500', 'Transport', 'expense', False, '5000'),
-    ('5600', 'Marketing', 'expense', False, '5000'),
-    ('5900', 'Miscellaneous', 'expense', False, '5000'),
+    ('5001', 'Direct Expenses', 'expense', True, '5000'),
+    ('500101', 'Purchases', 'expense', False, '5001'),
+    ('500102', 'Freight Charges', 'expense', False, '5001'),
+    ('500103', 'Discounts & rebates', 'expense', False, '5001'),
+    ('500104', 'Direct Labours Cost', 'expense', False, '5001'),
+    ('500105', 'Depreciation Plant & Machinery', 'expense', False, '5001'),
+    ('500106', 'Utility Charges', 'expense', False, '5001'),
+    ('500107', 'Repair & Maintenance (Plant & Machinery)', 'expense', False, '5001'),
+    ('500108', 'Store & Supplies', 'expense', False, '5001'),
+    ('5002', 'Admin & Operational Expenses', 'expense', True, '5000'),
+    ('500201', 'Salary & Wages', 'expense', False, '5002'),
+    ('500202', 'Building rent', 'expense', False, '5002'),
+    ('500203', 'Utility Charges', 'expense', False, '5002'),
+    ('500204', 'Repair & Maintenance (Office Equipment)', 'expense', False, '5002'),
+    ('500205', 'Repair & Maintenance (Vehicles)', 'expense', False, '5002'),
+    ('500206', 'Printing & Stationery', 'expense', False, '5002'),
+    ('500207', 'Legal & Professional Charges', 'expense', False, '5002'),
+    ('500208', 'Telephone/Internet Charges', 'expense', False, '5002'),
+    ('500209', 'Travelling Expense', 'expense', False, '5002'),
+    ('500210', 'Fees & Subscriptions', 'expense', False, '5002'),
+    ('500211', 'Advertisement & Marketing Expense', 'expense', False, '5002'),
+    ('500212', 'Entertainment Expense', 'expense', False, '5002'),
+    ('500213', 'Depreciation Expense', 'expense', False, '5002'),
+    ('500214', 'Miscellaneous Expense', 'expense', False, '5002'),
+    ('5015', 'Store & Spares (Dead Stock)', 'expense', False, '5000'),
 ]
 
 

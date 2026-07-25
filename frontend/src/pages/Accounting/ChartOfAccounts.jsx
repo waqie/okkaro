@@ -25,6 +25,12 @@ export default function ChartOfAccounts() {
     catch (err) { toast.error(err.response?.data?.error || 'Error') }
   }
 
+  const loadStandard = async () => {
+    if (!confirm('Load the standard chart of accounts into THIS business? Existing accounts stay; any missing standard accounts are added.')) return
+    try { const r = await api.post('/api/accounting/seed/'); toast.success(`Loaded (${r.data.created} added)`); fetchAccounts() }
+    catch (err) { toast.error(err.response?.data?.error || 'Error') }
+  }
+
   const typeLabel = (ty) => ({ asset: t('ty_asset'), liability: t('ty_liability'), equity: t('ty_equity'), income: t('ty_income'), expense: t('ty_expense') }[ty] || ty)
   const typeColor = (ty) => ({ asset: 'text-blue-700 bg-blue-50', liability: 'text-purple-700 bg-purple-50', equity: 'text-gray-700 bg-gray-100', income: 'text-green-700 bg-green-50', expense: 'text-red-700 bg-red-50' }[ty] || 'bg-gray-100')
 
@@ -147,7 +153,8 @@ export default function ChartOfAccounts() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div><h1 className="text-2xl font-bold text-gray-900">{t('nav_accounts')}</h1><p className="text-gray-500 text-sm mt-1">{t('coa_subtitle')}</p></div>
         <div className="flex gap-2">
-          {user?.is_superuser && <button onClick={setAsDefault} className="btn-secondary">Set as default for new businesses</button>}
+          {accounts.length === 0 && <button onClick={loadStandard} className="btn-secondary">Load standard chart</button>}
+          {user?.is_superuser && <button onClick={setAsDefault} className="btn-secondary">Set as default</button>}
           <button onClick={() => openNew()} className="btn-primary"><Plus size={16} /> Add Account</button>
         </div>
       </div>
