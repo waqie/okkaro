@@ -38,11 +38,8 @@ def _accessible(request):
 
 
 def _can_add_branches(request):
-    if request.user.is_superuser:
-        return True
-    home = _home_tenant(request)
-    head = (home.parent or home) if home else None
-    return bool(head and head.plan == 'pro')
+    # Only the OKKARO admin (superuser) may create branches — for every business.
+    return bool(request.user and request.user.is_superuser)
 
 
 def _serialize(t, head_schema, active_schema):
@@ -76,7 +73,7 @@ class BranchesView(APIView):
 
     def post(self, request):
         if not _can_add_branches(request):
-            return Response({'error': 'Branches Pro plan mein available hain. Pehle Pro par upgrade karein.'}, status=403)
+            return Response({'error': 'Only the OKKARO admin can add branches.'}, status=403)
         home = _home_tenant(request)
         if home is None and not request.user.is_superuser:
             return Response({'error': 'No head office found'}, status=400)

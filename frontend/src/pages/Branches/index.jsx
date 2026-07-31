@@ -67,10 +67,10 @@ export default function Branches() {
           <div className="flex items-start gap-3">
             <Lock className="text-amber-500 shrink-0 mt-0.5" size={20} />
             <div>
-              <p className="font-semibold text-gray-900">Multiple branches sirf Pro plan mein hain</p>
-              <p className="text-gray-600 text-sm mt-1">Apni 2 ya zyada franchises ek hi login se manage karne ke liye Pro par upgrade karein.</p>
-              <button onClick={() => openWhatsApp(WA, 'Assalam o Alaikum! Main OKKARO Pro plan (multiple branches) ke liye upgrade karna chahta/chahti hoon.')}
-                className="btn-primary mt-3 bg-green-600 hover:bg-green-700">Upgrade — WhatsApp par baat karein</button>
+              <p className="font-semibold text-gray-900">Branches OKKARO admin add karta hai</p>
+              <p className="text-gray-600 text-sm mt-1">Nayi branch/franchise add karne ke liye OKKARO se rabta karein — hum aap ke liye set kar denge.</p>
+              <button onClick={() => openWhatsApp(WA, 'Assalam o Alaikum! Mujhe apne business ke liye ek nayi branch add karwani hai.')}
+                className="btn-primary mt-3 bg-green-600 hover:bg-green-700">WhatsApp par rabta karein</button>
             </div>
           </div>
         </div>
