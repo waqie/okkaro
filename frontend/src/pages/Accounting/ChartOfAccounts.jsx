@@ -154,7 +154,6 @@ export default function ChartOfAccounts() {
         <div><h1 className="text-2xl font-bold text-gray-900">{t('nav_accounts')}</h1><p className="text-gray-500 text-sm mt-1">{t('coa_subtitle')}</p></div>
         <div className="flex gap-2">
           {accounts.length === 0 && <button onClick={loadStandard} className="btn-secondary">Load standard chart</button>}
-          {user?.is_superuser && <button onClick={setAsDefault} className="btn-secondary">Set as default</button>}
           <button onClick={() => openNew()} className="btn-primary"><Plus size={16} /> Add Account</button>
         </div>
       </div>

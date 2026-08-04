@@ -4,86 +4,155 @@ from django.db import transaction
 from django.utils import timezone
 from .models import Account, JournalEntry, JournalLine
 
-# ---- Well-known account codes used by auto-posting (match the default chart) ----
-AR = '100302'          # Accounts Receivables
-AP = '200205'          # Payable to Suppliers
-CASH = '100307'        # Cash In Hand
-BANK = '100306'        # Cash at Banks
-TAX_PAYABLE = '200202'  # WHT Payables
-SALES = '4001'         # Sale of Goods
-PURCHASES = '500101'   # Purchases
-DISCOUNT_GIVEN = '500103'  # Discounts & rebates
+# ---- Well-known account codes used by auto-posting (leaf accounts) ----
+AR = '10030201'          # Customers Account (under Accounts Receivables)
+AP = '20020501'          # Against supplies (under Payable to Suppliers)
+CASH = '10030701'        # Currency Notes (under Cash In Hand)
+BANK = '10030601'        # Askari Bank A/c (under Cash at Banks)
+TAX_PAYABLE = '20020201'  # WHT payable (under WHT Payables)
+SALES = '400101'         # Stock sold (under Sale of Goods)
+PURCHASES = '50010101'   # Stocks (under Purchases)
+DISCOUNT_GIVEN = '50010301'  # Customer Discounts (under Discounts & rebates)
 
-# Standard chart of accounts. code, name, type, is_group, parent_code
-DEFAULT_CHART = [
-    ('1000', 'Assets', 'asset', True, None),
-    ('1001', 'Long Term Assets', 'asset', True, '1000'),
-    ('100101', 'Land & Building Owned', 'asset', False, '1001'),
-    ('100102', 'Land & Building Leasehold', 'asset', False, '1001'),
-    ('100103', 'Furniture & Fixtures', 'asset', False, '1001'),
-    ('100104', 'Electrical Equipment', 'asset', False, '1001'),
-    ('100105', 'Office Equipment', 'asset', False, '1001'),
-    ('100106', 'Motor Vehicles', 'asset', False, '1001'),
-    ('100107', 'Computer Equipment', 'asset', False, '1001'),
-    ('100108', 'Accumulated Depreciation', 'asset', False, '1001'),
-    ('1002', 'Current Assets', 'asset', True, '1000'),
-    ('100301', 'Inventory/Stock in Trade', 'asset', False, '1002'),
-    ('100302', 'Accounts Receivables', 'asset', False, '1002'),
-    ('100303', 'Advance to Suppliers', 'asset', False, '1002'),
-    ('100304', 'Pre-Paid Expenses', 'asset', False, '1002'),
-    ('100305', 'Security Deposits', 'asset', False, '1002'),
-    ('100306', 'Cash at Banks', 'asset', False, '1002'),
-    ('100307', 'Cash In Hand', 'asset', False, '1002'),
-    ('100308', 'Other Assets', 'asset', False, '1002'),
-
-    ('2000', 'Liabilities', 'liability', True, None),
-    ('2001', 'Long Term Liabilities', 'liability', True, '2000'),
-    ('200101', 'Bank Borrowings', 'liability', False, '2001'),
-    ('2002', 'Current Liabilities', 'liability', True, '2000'),
-    ('200201', 'Accrued Salaries', 'liability', False, '2002'),
-    ('200202', 'WHT Payables', 'liability', False, '2002'),
-    ('200203', 'Advance from Customers', 'liability', False, '2002'),
-    ('200204', 'Accrued Expenses', 'liability', False, '2002'),
-    ('200205', 'Payable to Suppliers', 'liability', False, '2002'),
-    ('200206', 'Utility Bills Payable', 'liability', False, '2002'),
-    ('200207', 'Other Payables', 'liability', False, '2002'),
-
-    ('3000', 'Equity', 'equity', True, None),
-    ('3001', 'Paid Up Capital', 'equity', False, '3000'),
-    ('3002', 'Retained Earnings', 'equity', False, '3000'),
-
-    ('4000', 'Income', 'income', True, None),
-    ('4001', 'Sale of Goods', 'income', False, '4000'),
-    ('4002', 'Fee & Commissions', 'income', False, '4000'),
-    ('4003', 'Other Income', 'income', False, '4000'),
-
-    ('5000', 'Expenses', 'expense', True, None),
-    ('5001', 'Direct Expenses', 'expense', True, '5000'),
-    ('500101', 'Purchases', 'expense', False, '5001'),
-    ('500102', 'Freight Charges', 'expense', False, '5001'),
-    ('500103', 'Discounts & rebates', 'expense', False, '5001'),
-    ('500104', 'Direct Labours Cost', 'expense', False, '5001'),
-    ('500105', 'Depreciation Plant & Machinery', 'expense', False, '5001'),
-    ('500106', 'Utility Charges', 'expense', False, '5001'),
-    ('500107', 'Repair & Maintenance (Plant & Machinery)', 'expense', False, '5001'),
-    ('500108', 'Store & Supplies', 'expense', False, '5001'),
-    ('5002', 'Admin & Operational Expenses', 'expense', True, '5000'),
-    ('500201', 'Salary & Wages', 'expense', False, '5002'),
-    ('500202', 'Building rent', 'expense', False, '5002'),
-    ('500203', 'Utility Charges', 'expense', False, '5002'),
-    ('500204', 'Repair & Maintenance (Office Equipment)', 'expense', False, '5002'),
-    ('500205', 'Repair & Maintenance (Vehicles)', 'expense', False, '5002'),
-    ('500206', 'Printing & Stationery', 'expense', False, '5002'),
-    ('500207', 'Legal & Professional Charges', 'expense', False, '5002'),
-    ('500208', 'Telephone/Internet Charges', 'expense', False, '5002'),
-    ('500209', 'Travelling Expense', 'expense', False, '5002'),
-    ('500210', 'Fees & Subscriptions', 'expense', False, '5002'),
-    ('500211', 'Advertisement & Marketing Expense', 'expense', False, '5002'),
-    ('500212', 'Entertainment Expense', 'expense', False, '5002'),
-    ('500213', 'Depreciation Expense', 'expense', False, '5002'),
-    ('500214', 'Miscellaneous Expense', 'expense', False, '5002'),
-    ('5015', 'Store & Spares (Dead Stock)', 'expense', False, '5000'),
+# Full 4-level chart: (code, name, type, parent_code). is_group is derived below.
+_CHART = [
+    # ---------------- ASSETS ----------------
+    ('1000', 'Assets', 'asset', None),
+    ('1001', 'Long Term Assets', 'asset', '1000'),
+    ('100101', 'Land & Building Owned', 'asset', '1001'),
+    ('10010101', 'Head Office Building (Owned)', 'asset', '100101'),
+    ('100102', 'Land & Building Leasehold', 'asset', '1001'),
+    ('10010201', 'Head Office Building (Leasehold)', 'asset', '100102'),
+    ('100103', 'Office Furniture', 'asset', '1001'),
+    ('100104', 'Electrical Equipment', 'asset', '1001'),
+    ('10010401', 'Air Conditioner', 'asset', '100104'),
+    ('100105', 'Office Equipment', 'asset', '1001'),
+    ('10010501', 'Photocopier Machine', 'asset', '100105'),
+    ('100106', 'Motor Vehicles', 'asset', '1001'),
+    ('10010601', 'Honda Car AV 325', 'asset', '100106'),
+    ('100107', 'Computer Equipment', 'asset', '1001'),
+    ('10010701', 'Desktop Equipment', 'asset', '100107'),
+    ('100108', 'Accumulated Depreciation', 'asset', '1001'),
+    ('10010801', 'Depreciation Land and Building', 'asset', '100108'),
+    ('10010802', 'Depreciation Furniture and Fixtures', 'asset', '100108'),
+    ('10010803', 'Depreciation Air Conditioner Equipment', 'asset', '100108'),
+    ('10010804', 'Depreciation Photo Copier Machine', 'asset', '100108'),
+    ('10010805', 'Depreciation Honda Car AV 325', 'asset', '100108'),
+    ('10010806', 'Depreciation Desktop Equipment', 'asset', '100108'),
+    ('10010807', 'Depreciation Plant & Machinery', 'asset', '100108'),
+    ('100109', 'Plant & Machinery', 'asset', '1001'),
+    ('10010901', 'Factory Machines', 'asset', '100109'),
+    ('1002', 'Current Assets', 'asset', '1000'),
+    ('100301', 'Inventory/Stock in Trade', 'asset', '1002'),
+    ('10030101', 'Stock for local sale', 'asset', '100301'),
+    ('100302', 'Accounts Receivables', 'asset', '1002'),
+    ('10030201', 'Customers Account', 'asset', '100302'),
+    ('100303', 'Advance to Suppliers', 'asset', '1002'),
+    ('10030301', 'Deposits against purchases', 'asset', '100303'),
+    ('100304', 'Pre-Paid Expenses', 'asset', '1002'),
+    ('10030401', 'Advance rent paid', 'asset', '100304'),
+    ('100305', 'Security Deposits', 'asset', '1002'),
+    ('10030501', 'Cellular Companies', 'asset', '100305'),
+    ('100306', 'Cash at Banks', 'asset', '1002'),
+    ('10030601', 'Askari Bank A/c', 'asset', '100306'),
+    ('100307', 'Cash In Hand', 'asset', '1002'),
+    ('10030701', 'Currency Notes', 'asset', '100307'),
+    ('100308', 'Other Assets', 'asset', '1002'),
+    ('10030801', 'Store & Spares', 'asset', '100308'),
+    # ---------------- LIABILITIES ----------------
+    ('2000', 'Liabilities', 'liability', None),
+    ('2001', 'Long Term Liabilities', 'liability', '2000'),
+    ('200101', 'Bank Borrowings', 'liability', '2001'),
+    ('20010101', 'Askari Bank', 'liability', '200101'),
+    ('2002', 'Current Liabilities', 'liability', '2000'),
+    ('200201', 'Accrued Salaries', 'liability', '2002'),
+    ('20020101', 'Staff Salary m/o June', 'liability', '200201'),
+    ('200202', 'WHT Payables', 'liability', '2002'),
+    ('20020201', 'WHT payable on salaries', 'liability', '200202'),
+    ('200203', 'Advance from Customers', 'liability', '2002'),
+    ('20020301', 'Advance for stock', 'liability', '200203'),
+    ('200204', 'Accrued Expenses', 'liability', '2002'),
+    ('20020401', 'Rent Payable', 'liability', '200204'),
+    ('200205', 'Payable to Suppliers', 'liability', '2002'),
+    ('20020501', 'Against supplies', 'liability', '200205'),
+    ('200206', 'Utility Bills Payable', 'liability', '2002'),
+    ('20020601', 'Electricity Bill', 'liability', '200206'),
+    ('200207', 'Other Payables', 'liability', '2002'),
+    ('20020701', 'Wages payable', 'liability', '200207'),
+    # ---------------- EQUITY ----------------
+    ('3000', 'Equity', 'equity', None),
+    ('3001', 'Paid Up Capital', 'equity', '3000'),
+    ('300101', 'Capital Subscribed', 'equity', '3001'),
+    ('3002', 'Retained Earnings', 'equity', '3000'),
+    ('300201', 'Profit for the year', 'equity', '3002'),
+    ('300202', 'Profit c/f', 'equity', '3002'),
+    # ---------------- INCOME ----------------
+    ('4000', 'Income', 'income', None),
+    ('4001', 'Sale of Goods', 'income', '4000'),
+    ('400101', 'Stock sold', 'income', '4001'),
+    ('4002', 'Fee & Commissions', 'income', '4000'),
+    ('400201', 'Professional Fees', 'income', '4002'),
+    ('4003', 'Other Income', 'income', '4000'),
+    ('400301', 'Bank profits', 'income', '4003'),
+    # ---------------- EXPENSES ----------------
+    ('5000', 'Expenses', 'expense', None),
+    ('5001', 'Direct Expenses', 'expense', '5000'),
+    ('500101', 'Purchases', 'expense', '5001'),
+    ('50010101', 'Stocks', 'expense', '500101'),
+    ('500102', 'Freight Charges', 'expense', '5001'),
+    ('50010201', 'Custom Clearance Fees', 'expense', '500102'),
+    ('500103', 'Discounts & rebates', 'expense', '5001'),
+    ('50010301', 'Customer Discounts', 'expense', '500103'),
+    ('500104', 'Direct Labours Cost', 'expense', '5001'),
+    ('50010401', 'Daily Wagers', 'expense', '500104'),
+    ('500105', 'Depreciation Plant & Machinery', 'expense', '5001'),
+    ('50010501', 'Factory Equipment', 'expense', '500105'),
+    ('500106', 'Utility Charges', 'expense', '5001'),
+    ('50010601', 'Electricity Bills Plant', 'expense', '500106'),
+    ('500107', 'Repair & Maintenance (Plant & Machinery)', 'expense', '5001'),
+    ('50010701', 'Factory Machines', 'expense', '500107'),
+    ('500108', 'Store & Supplies', 'expense', '5001'),
+    ('50010801', 'Store for plants', 'expense', '500108'),
+    ('5002', 'Admin & Operational Expenses', 'expense', '5000'),
+    ('500201', 'Salary & Wages', 'expense', '5002'),
+    ('50020101', 'H/o Staff', 'expense', '500201'),
+    ('500202', 'Building rent', 'expense', '5002'),
+    ('50020201', 'H/o Building', 'expense', '500202'),
+    ('500203', 'Utility Charges', 'expense', '5002'),
+    ('50020301', 'H/o Utilities', 'expense', '500203'),
+    ('500204', 'Repair & Maintenance (Office Equipment)', 'expense', '5002'),
+    ('50020401', 'Photocopier machine', 'expense', '500204'),
+    ('500205', 'Repair & Maintenance (Vehicles)', 'expense', '5002'),
+    ('50020501', 'Honda City', 'expense', '500205'),
+    ('500206', 'Printing & Stationery', 'expense', '5002'),
+    ('50020601', 'Office Stationery', 'expense', '500206'),
+    ('500207', 'Legal & Professional Charges', 'expense', '5002'),
+    ('50020701', 'Auditors fee', 'expense', '500207'),
+    ('500208', 'Telephone/Internet Charges', 'expense', '5002'),
+    ('50020801', 'Transworld', 'expense', '500208'),
+    ('500209', 'Travelling Expense', 'expense', '5002'),
+    ('50020901', 'Local Travelling', 'expense', '500209'),
+    ('500210', 'Fees & Subscriptions', 'expense', '5002'),
+    ('50021001', 'Excise Duties', 'expense', '500210'),
+    ('500211', 'Advertisement & Marketing Expense', 'expense', '5002'),
+    ('50021101', 'Print Media', 'expense', '500211'),
+    ('500212', 'Entertainment Expense', 'expense', '5002'),
+    ('50021201', 'H/o Entertainment', 'expense', '500212'),
+    ('500213', 'Depreciation Expense', 'expense', '5002'),
+    ('50021301', 'Depreciation Land and Building', 'expense', '500213'),
+    ('50021302', 'Depreciation Furnitures and Fixtures', 'expense', '500213'),
+    ('50021303', 'Depreciation Air Conditioner Equipment', 'expense', '500213'),
+    ('50021304', 'Depreciation Photocopier Machines', 'expense', '500213'),
+    ('50021305', 'Depreciation Honda Car AV 325', 'expense', '500213'),
+    ('50021306', 'Depreciation Desktop Equipment', 'expense', '500213'),
+    ('500214', 'Miscellaneous Expense', 'expense', '5002'),
+    ('50021401', 'Other Expenses', 'expense', '500214'),
 ]
+
+# Any code that is a parent of another is a group (heading, not postable).
+_PARENT_CODES = {p for (_, _, _, p) in _CHART if p}
+# code, name, type, is_group, parent_code
+DEFAULT_CHART = [(c, n, t, c in _PARENT_CODES, p) for (c, n, t, p) in _CHART]
 
 
 def _active_template():
@@ -96,30 +165,13 @@ def _active_template():
 
 
 def seed_default_accounts():
-    """Seed a business's chart of accounts.
-
-    Uses the saved ChartTemplate (an admin-approved chart from a real business)
-    if one exists; otherwise the built-in default. Parents are created before
-    children (shorter codes first)."""
-    tpl = _active_template()
-    if tpl and tpl.accounts:
-        rows = [(a['code'], a['name'], a['type'], a.get('is_group', False),
-                 a.get('parent_code'), a) for a in tpl.accounts]
-    else:
-        rows = [(c, n, ty, g, p, None) for (c, n, ty, g, p) in DEFAULT_CHART]
-
+    """Seed a business's chart of accounts from the standard chart.
+    Parents are created before children (shorter codes first)."""
     created = 0
-    for code, name, type_, is_group, parent_code, extra in sorted(rows, key=lambda x: (len(str(x[0])), str(x[0]))):
+    for code, name, type_, is_group, parent_code in sorted(DEFAULT_CHART, key=lambda x: (len(str(x[0])), str(x[0]))):
         parent = Account.objects.filter(code=parent_code).first() if parent_code else None
-        defaults = dict(name=name, type=type_, is_group=is_group, parent=parent)
-        if extra:
-            defaults['bank_name'] = extra.get('bank_name', '') or ''
-            defaults['account_number'] = extra.get('account_number', '') or ''
-            try:
-                defaults['opening_balance'] = Decimal(str(extra.get('opening_balance') or 0))
-            except Exception:
-                pass
-        _, was_created = Account.objects.get_or_create(code=code, defaults=defaults)
+        _, was_created = Account.objects.get_or_create(
+            code=code, defaults=dict(name=name, type=type_, is_group=is_group, parent=parent))
         if was_created:
             created += 1
     return created
