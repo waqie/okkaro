@@ -167,7 +167,7 @@ export default function Vouchers() {
                   <div key={i} className="grid grid-cols-12 gap-2 items-center">
                     <select className="input col-span-6" value={l.account} onChange={e => setLine(i, 'account', e.target.value)}>
                       <option value="">—</option>
-                      {accounts.map(a => <option key={a.id} value={a.id} disabled={a.is_group} style={a.is_group ? { fontWeight: 700, color: '#6b7280' } : {}}>{acctLabel(a)}</option>)}
+                      {accounts.map(a => <option key={a.id} value={a.id} disabled={a.depth === 0} style={a.depth === 0 ? { fontWeight: 700, color: '#6b7280' } : {}}>{acctLabel(a)}</option>)}
                     </select>
                     <input type="number" className="input col-span-3 text-end" placeholder="0" value={l.debit} onChange={e => setLine(i, 'debit', e.target.value)} />
                     <input type="number" className="input col-span-2 text-end" placeholder="0" value={l.credit} onChange={e => setLine(i, 'credit', e.target.value)} />
