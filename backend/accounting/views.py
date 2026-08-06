@@ -176,16 +176,16 @@ class TrialBalanceView(APIView):
     def get(self, request):
         frm, to = _range(request)
         rows, td, tc = [], D0, D0
-        for a in Account.objects.filter(is_group=False, is_active=True):
+        # show the full chart (every postable account) even if the balance is zero
+        for a in Account.objects.filter(is_group=False, is_active=True).order_by('code'):
             d, c = _sums(_line_qs(a, frm, to))
             net = _opening_signed(a) + (d - c)
             debit = net if net > 0 else D0
             credit = -net if net < 0 else D0
-            if debit or credit:
-                rows.append({'code': a.code, 'name': a.name, 'type': a.type,
-                             'debit': debit, 'credit': credit})
-                td += debit
-                tc += credit
+            rows.append({'code': a.code, 'name': a.name, 'type': a.type,
+                         'debit': debit, 'credit': credit})
+            td += debit
+            tc += credit
         return Response({'rows': rows, 'total_debit': td, 'total_credit': tc})
 
 
@@ -194,18 +194,16 @@ class ProfitLossView(APIView):
         frm, to = _range(request)
         income, expense = [], []
         inc_total, exp_total = D0, D0
-        for a in Account.objects.filter(is_group=False, type='income'):
+        for a in Account.objects.filter(is_group=False, type='income').order_by('code'):
             d, c = _sums(_line_qs(a, frm, to))
             amt = -((_opening_signed(a)) + (d - c))  # credit positive
-            if amt:
-                income.append({'name': a.name, 'amount': amt})
-                inc_total += amt
-        for a in Account.objects.filter(is_group=False, type='expense'):
+            income.append({'name': a.name, 'amount': amt})
+            inc_total += amt
+        for a in Account.objects.filter(is_group=False, type='expense').order_by('code'):
             d, c = _sums(_line_qs(a, frm, to))
             amt = _opening_signed(a) + (d - c)  # debit positive
-            if amt:
-                expense.append({'name': a.name, 'amount': amt})
-                exp_total += amt
+            expense.append({'name': a.name, 'amount': amt})
+            exp_total += amt
         return Response({
             'income': income, 'expense': expense,
             'income_total': inc_total, 'expense_total': exp_total,
@@ -219,13 +217,12 @@ class BalanceSheetView(APIView):
 
         def side(type_, credit_positive):
             items, total = [], D0
-            for a in Account.objects.filter(is_group=False, type=type_):
+            for a in Account.objects.filter(is_group=False, type=type_).order_by('code'):
                 d, c = _sums(_line_qs(a, None, to))
                 net = _opening_signed(a) + (d - c)
                 amt = -net if credit_positive else net
-                if amt:
-                    items.append({'name': a.name, 'amount': amt})
-                    total += amt
+                items.append({'name': a.name, 'amount': amt})
+                total += amt
             return items, total
 
         assets, assets_total = side('asset', False)
@@ -253,19 +250,38 @@ class BalanceSheetView(APIView):
         })
 
 
+def _descendant_ids(account):
+    """This account + all accounts nested under it (any depth)."""
+    ids, stack = [account.id], [account.id]
+    while stack:
+        pid = stack.pop()
+        for c in Account.objects.filter(parent_id=pid):
+            ids.append(c.id); stack.append(c.id)
+    return ids
+
+
 class AccountLedgerView(APIView):
     def get(self, request, code):
         a = Account.objects.filter(code=code).first()
         if not a:
             return Response({'error': 'not found'}, status=404)
         frm, to = _range(request)
-        opening = _opening_signed(a)
+        # a heading rolls up all its descendant accounts
+        ids = _descendant_ids(a)
+        accs = list(Account.objects.filter(id__in=ids))
+        opening = sum((_opening_signed(x) for x in accs), D0)
         bal = opening
         rows = []
-        for ln in _line_qs(a, frm, to).select_related('entry', 'party').order_by('entry__date', 'id'):
+        qs = JournalLine.objects.filter(account_id__in=ids)
+        if frm:
+            qs = qs.filter(entry__date__gte=frm)
+        if to:
+            qs = qs.filter(entry__date__lte=to)
+        for ln in qs.select_related('entry', 'party', 'account').order_by('entry__date', 'id'):
             bal += (ln.debit - ln.credit)
             rows.append({
                 'date': ln.entry.date, 'number': ln.entry.number,
+                'account': ln.account.name,
                 'narration': ln.narration or ln.entry.narration,
                 'party': ln.party.name if ln.party else '',
                 'debit': ln.debit, 'credit': ln.credit, 'balance': bal,

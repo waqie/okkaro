@@ -27,7 +27,7 @@ export default function GeneralLedger() {
       <div className="card p-4">
         <select className="input max-w-md" value={code} onChange={e => setCode(e.target.value)}>
           <option value="">{t('select_account')}</option>
-          {accounts.map(a => <option key={a.id} value={a.code} disabled={a.depth === 0} style={a.depth === 0 ? { fontWeight: 700, color: '#6b7280' } : {}}>{acctLabel(a)}</option>)}
+          {accounts.map(a => <option key={a.id} value={a.code} style={a.is_group ? { fontWeight: 700 } : {}}>{acctLabel(a)}</option>)}
         </select>
       </div>
 
