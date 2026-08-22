@@ -22,11 +22,19 @@ class Party(models.Model):
 
     @property
     def current_balance(self):
+        # ledger-based: opening + every journal line tagged to this party
+        # (invoices, payments AND manual vouchers) — so it matches the khata & GL.
         from django.db.models import Sum
-        invoices = self.invoices.filter(status__in=['paid','partial','unpaid']).aggregate(
-            total=Sum('grand_total'))['total'] or 0
-        payments = self.payments.aggregate(total=Sum('amount'))['total'] or 0
-        return invoices - payments
+        try:
+            from accounting.models import JournalLine
+            agg = JournalLine.objects.filter(party=self).aggregate(d=Sum('debit'), c=Sum('credit'))
+            net = (agg['d'] or 0) - (agg['c'] or 0)
+            return (self.opening_balance or 0) + net
+        except Exception:
+            invoices = self.invoices.filter(status__in=['paid', 'partial', 'unpaid']).aggregate(
+                total=Sum('grand_total'))['total'] or 0
+            payments = self.payments.aggregate(total=Sum('amount'))['total'] or 0
+            return invoices - payments
 
 class Invoice(models.Model):
     STATUS = [

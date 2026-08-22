@@ -11,20 +11,22 @@ export default function Vouchers() {
   const { t } = useT()
   const [list, setList] = useState([])
   const [accounts, setAccounts] = useState([])
+  const [parties, setParties] = useState([])
   const [show, setShow] = useState(false)
   const [editing, setEditing] = useState(null)
   const [viewing, setViewing] = useState(null)
-  const blankForm = () => ({ type: 'journal', date: new Date().toISOString().slice(0, 10), narration: '', lines: [{ account: '', debit: '', credit: '' }, { account: '', debit: '', credit: '' }] })
+  const blankForm = () => ({ type: 'journal', date: new Date().toISOString().slice(0, 10), narration: '', lines: [{ account: '', party: '', debit: '', credit: '' }, { account: '', party: '', debit: '', credit: '' }] })
   const [form, setForm] = useState(blankForm())
 
   const fetchList = () => api.get('/api/accounting/journal/').then(r => setList(r.data.results || r.data)).catch(() => {})
   useEffect(() => {
     fetchList()
     api.get('/api/accounting/accounts/').then(r => setAccounts(sortAccountsTree(r.data.results || r.data))).catch(() => {})
+    api.get('/api/invoicing/parties/').then(r => setParties(r.data.results || r.data)).catch(() => {})
   }, [])
 
   const setLine = (i, k, v) => setForm(f => ({ ...f, lines: f.lines.map((l, idx) => idx === i ? { ...l, [k]: v } : l) }))
-  const addLine = () => setForm(f => ({ ...f, lines: [...f.lines, { account: '', debit: '', credit: '' }] }))
+  const addLine = () => setForm(f => ({ ...f, lines: [...f.lines, { account: '', party: '', debit: '', credit: '' }] }))
   const delLine = (i) => setForm(f => ({ ...f, lines: f.lines.filter((_, idx) => idx !== i) }))
 
   const totDr = form.lines.reduce((s, l) => s + Number(l.debit || 0), 0)
@@ -38,7 +40,7 @@ export default function Vouchers() {
     setEditing(v.id)
     setForm({
       type: v.type, date: v.date, narration: v.narration || '',
-      lines: (v.lines || []).map(l => ({ account: l.account, debit: Number(l.debit) || '', credit: Number(l.credit) || '' })),
+      lines: (v.lines || []).map(l => ({ account: l.account, party: l.party || '', debit: Number(l.debit) || '', credit: Number(l.credit) || '' })),
     })
     setShow(true)
   }
@@ -49,7 +51,7 @@ export default function Vouchers() {
     const payload = {
       type: form.type, date: form.date, narration: form.narration,
       lines: form.lines.filter(l => l.account && (Number(l.debit) || Number(l.credit)))
-        .map(l => ({ account: Number(l.account), debit: Number(l.debit || 0), credit: Number(l.credit || 0) })),
+        .map(l => ({ account: Number(l.account), party: l.party ? Number(l.party) : null, debit: Number(l.debit || 0), credit: Number(l.credit || 0) })),
     }
     try {
       // edit = replace: delete the old voucher, then create fresh
@@ -161,19 +163,24 @@ export default function Vouchers() {
 
               <div className="space-y-2">
                 <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-500 uppercase px-1">
-                  <span className="col-span-6">{t('account_l')}</span><span className="col-span-3 text-end">{t('debit')}</span><span className="col-span-3 text-end">{t('credit')}</span>
+                  <span className="col-span-4">{t('account_l')}</span><span className="col-span-3">Party (optional)</span><span className="col-span-2 text-end">{t('debit')}</span><span className="col-span-2 text-end">{t('credit')}</span><span className="col-span-1" />
                 </div>
                 {form.lines.map((l, i) => (
                   <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                    <select className="input col-span-6" value={l.account} onChange={e => setLine(i, 'account', e.target.value)}>
+                    <select className="input col-span-4" value={l.account} onChange={e => setLine(i, 'account', e.target.value)}>
                       <option value="">—</option>
                       {accounts.map(a => <option key={a.id} value={a.id} disabled={a.is_group} style={a.is_group ? { fontWeight: 700, color: '#6b7280' } : {}}>{acctLabel(a)}</option>)}
                     </select>
-                    <input type="number" className="input col-span-3 text-end" placeholder="0" value={l.debit} onChange={e => setLine(i, 'debit', e.target.value)} />
+                    <select className="input col-span-3" value={l.party} onChange={e => setLine(i, 'party', e.target.value)}>
+                      <option value="">— No party —</option>
+                      {parties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <input type="number" className="input col-span-2 text-end" placeholder="0" value={l.debit} onChange={e => setLine(i, 'debit', e.target.value)} />
                     <input type="number" className="input col-span-2 text-end" placeholder="0" value={l.credit} onChange={e => setLine(i, 'credit', e.target.value)} />
                     <button type="button" onClick={() => delLine(i)} className="col-span-1 text-red-400"><Trash2 size={15} /></button>
                   </div>
                 ))}
+                <p className="text-xs text-gray-400 px-1">Tip: jab line "Accounts Receivable/Payable" ho, us par customer/supplier (party) choose karein — entry us party ke Khata mein bhi auto aa jayegi.</p>
                 <button type="button" onClick={addLine} className="text-sm text-primary-600 font-medium">+ {t('add_line')}</button>
               </div>
 
