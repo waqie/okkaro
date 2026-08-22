@@ -60,6 +60,50 @@ class AccountViewSet(viewsets.ModelViewSet):
             qs = qs.filter(is_group=False)
         return qs
 
+    @action(detail=False, methods=['post'])
+    def insert(self, request):
+        """Create an account at a chosen code; if that code is taken, shift the
+        siblings from that code onward down by one (cascading to their
+        sub-accounts). Codes are referenced by id in the ledger, so re-coding is
+        safe — only the display code changes."""
+        from django.db import transaction
+        d = request.data
+        code = str(d.get('code') or '').strip()
+        name = (d.get('name') or '').strip()
+        parent_id = d.get('parent') or None
+        if not code or not name or len(code) < 2:
+            return Response({'error': 'code and name required'}, status=400)
+        with transaction.atomic():
+            if Account.objects.filter(code=code).exists():
+                self._shift_from(code, parent_id)
+            acc = Account.objects.create(
+                code=code, name=name, type=d.get('type', 'asset'),
+                parent_id=parent_id or None, is_group=bool(d.get('is_group')),
+                opening_balance=d.get('opening_balance') or 0,
+                bank_name=d.get('bank_name', '') or '', account_number=d.get('account_number', '') or '',
+                is_active=True)
+        return Response(AccountSerializer(acc).data, status=201)
+
+    def _shift_from(self, code, parent_id):
+        base, start = code[:-2], int(code[-2:])
+        sibs = [a for a in Account.objects.filter(parent_id=parent_id)
+                if len(a.code) == len(code) and a.code[:-2] == base
+                and a.code[-2:].isdigit() and int(a.code[-2:]) >= start]
+        sibs.sort(key=lambda a: int(a.code[-2:]), reverse=True)   # highest first — no collisions
+        for a in sibs:
+            self._recode(a, a.code, f"{base}{int(a.code[-2:]) + 1:02d}")
+
+    def _recode(self, account, old, new):
+        # move this account, then re-prefix every descendant whose code starts with old
+        descendants = [dd for dd in Account.objects.all()
+                       if dd.id != account.id and dd.code and dd.code.startswith(old)]
+        descendants.sort(key=lambda x: -len(x.code))   # deepest first
+        account.code = new
+        account.save(update_fields=['code'])
+        for dd in descendants:
+            dd.code = new + dd.code[len(old):]
+            dd.save(update_fields=['code'])
+
     def destroy(self, request, *args, **kwargs):
         acc = self.get_object()
         if acc.children.exists():

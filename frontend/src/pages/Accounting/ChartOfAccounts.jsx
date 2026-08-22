@@ -112,8 +112,20 @@ export default function ChartOfAccounts() {
       setShow(false); setEditing(null); setForm(blank()); fetchAccounts()
     } catch (err) {
       const d = err.response?.data
-      if (d?.code) toast.error(`Code "${form.code}" already exists`)
-      else toast.error(d ? JSON.stringify(d).slice(0, 140) : 'Error')
+      if (!editing && d?.code) {
+        // code taken → offer to insert here and shift the accounts below down
+        if (confirm(`Code "${form.code}" already exists.\n\nInsert here and shift the accounts below down (${form.code}→next, and so on)?`)) {
+          try {
+            await api.post('/api/accounting/accounts/insert/', payload)
+            toast.success('Inserted — accounts below shifted down')
+            setShow(false); setEditing(null); setForm(blank()); fetchAccounts()
+          } catch (e2) { toast.error(e2.response?.data?.error || 'Insert failed') }
+          finally { setSaving(false) }
+          return
+        }
+        setSaving(false); return
+      }
+      toast.error(d ? JSON.stringify(d).slice(0, 140) : 'Error')
     }
     finally { setSaving(false) }
   }
