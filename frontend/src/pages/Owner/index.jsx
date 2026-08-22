@@ -59,6 +59,15 @@ export default function Owner() {
   }
 
   const errMsg = (err) => err.response?.data?.error || err.response?.data?.detail || `${err.response?.status || ''} ${err.message}`.trim() || 'Error'
+  const resetAllCharts = async () => {
+    if (!confirm('Update the chart of accounts for ALL businesses to the latest standard chart?\n\nThis replaces old accounts and rebuilds the ledger from invoices/payments. (Expense entries are removed and must be re-added.)')) return
+    const tid = toast.loading('Updating all businesses…')
+    try {
+      const r = await api.post('/api/accounting/chart/reset-all/')
+      toast.success(`Done — ${r.data.reset} businesses updated`, { id: tid })
+    } catch (err) { toast.error(err.response?.data?.error || 'Error', { id: tid }) }
+  }
+
   const setPlan = async (id, plan) => {
     try { await api.patch(`/api/owner/businesses/${id}/`, { plan }); toast.success('Plan updated'); fetchRows() }
     catch (err) { toast.error(errMsg(err)) }
@@ -94,7 +103,10 @@ export default function Owner() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div><h1 className="text-2xl font-bold text-gray-900">{t('nav_owner')}</h1><p className="text-gray-500 text-sm mt-1">{t('owner_subtitle')}</p></div>
-        <button onClick={() => setShow(true)} className="btn-primary"><Plus size={16} /> {t('add_business')}</button>
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={resetAllCharts} className="btn-secondary">Update all charts</button>
+          <button onClick={() => setShow(true)} className="btn-primary"><Plus size={16} /> {t('add_business')}</button>
+        </div>
       </div>
 
       {/* Overview stats */}

@@ -188,6 +188,41 @@ class SaveChartTemplateView(APIView):
         return Response({'saved': len(data)})
 
 
+class ResetAllChartsView(APIView):
+    """Superuser: replace EVERY business's chart of accounts with the latest
+    default chart, and re-post invoices/payments. (Same as the reset_charts
+    command, but runnable from the app — no terminal needed.)"""
+    def post(self, request):
+        if not (request.user and request.user.is_superuser):
+            return Response({'error': 'forbidden'}, status=403)
+        from django.db import connection
+        from django_tenants.utils import schema_context, get_tenant_model
+        from accounting.models import JournalEntry
+        from accounting.services import seed_default_accounts
+        from invoicing.models import Invoice, Payment
+
+        T = get_tenant_model()
+        results = []
+        for t in T.objects.exclude(schema_name='public'):
+            try:
+                with schema_context(t.schema_name):
+                    Expense.objects.all().delete()
+                    JournalEntry.objects.all().delete()
+                    Account.objects.all().delete()
+                    n = seed_default_accounts()
+                    for inv in Invoice.objects.all():
+                        try: inv.save()
+                        except Exception: pass
+                    for pmt in Payment.objects.all():
+                        try: pmt.save()
+                        except Exception: pass
+                    results.append({'business': t.business_name or t.schema_name, 'accounts': n})
+            except Exception as e:
+                results.append({'business': t.schema_name, 'error': str(e)[:120]})
+        connection.set_schema_to_public()
+        return Response({'reset': len(results), 'businesses': results})
+
+
 class VoucherView(APIView):
     """Create a manual double-entry voucher (Journal/Receipt/Payment/Contra)."""
     def post(self, request):
