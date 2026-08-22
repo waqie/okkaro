@@ -73,15 +73,19 @@ class AccountViewSet(viewsets.ModelViewSet):
         parent_id = d.get('parent') or None
         if not code or not name or len(code) < 2:
             return Response({'error': 'code and name required'}, status=400)
-        with transaction.atomic():
-            if Account.objects.filter(code=code).exists():
-                self._shift_from(code, parent_id)
-            acc = Account.objects.create(
-                code=code, name=name, type=d.get('type', 'asset'),
-                parent_id=parent_id or None, is_group=bool(d.get('is_group')),
-                opening_balance=d.get('opening_balance') or 0,
-                bank_name=d.get('bank_name', '') or '', account_number=d.get('account_number', '') or '',
-                is_active=True)
+        try:
+            with transaction.atomic():
+                if Account.objects.filter(code=code).exists():
+                    self._shift_from(code, parent_id)
+                acc = Account.objects.create(
+                    code=code, name=name, type=d.get('type', 'asset'),
+                    parent_id=(int(parent_id) if parent_id else None), is_group=bool(d.get('is_group')),
+                    opening_balance=d.get('opening_balance') or 0,
+                    bank_name=d.get('bank_name', '') or '', account_number=d.get('account_number', '') or '',
+                    is_active=True)
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            return Response({'error': f'{type(e).__name__}: {e}'}, status=400)
         return Response(AccountSerializer(acc).data, status=201)
 
     def _shift_from(self, code, parent_id):

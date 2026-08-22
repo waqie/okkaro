@@ -119,7 +119,10 @@ export default function ChartOfAccounts() {
             await api.post('/api/accounting/accounts/insert/', payload)
             toast.success('Inserted — accounts below shifted down')
             setShow(false); setEditing(null); setForm(blank()); fetchAccounts()
-          } catch (e2) { toast.error(e2.response?.data?.error || 'Insert failed') }
+          } catch (e2) {
+            const st = e2.response?.status
+            toast.error(e2.response?.data?.error || (st === 404 ? 'Insert not deployed yet (backend)' : `Insert failed (${st || '?'})`), { duration: 7000 })
+          }
           finally { setSaving(false) }
           return
         }
