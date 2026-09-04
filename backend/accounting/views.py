@@ -88,10 +88,15 @@ class AccountViewSet(viewsets.ModelViewSet):
             return Response({'error': f'{type(e).__name__}: {e}'}, status=400)
         return Response(AccountSerializer(acc).data, status=201)
 
-    def _shift_from(self, code, parent_id):
+    def _shift_from(self, code, parent_id=None):
+        # shift by CODE SERIES (same length + same base prefix), regardless of
+        # which parent the account sits under — the existing code may belong to a
+        # different parent than the one chosen for the new account.
+        if not code[-2:].isdigit():
+            return
         base, start = code[:-2], int(code[-2:])
-        sibs = [a for a in Account.objects.filter(parent_id=parent_id)
-                if len(a.code) == len(code) and a.code[:-2] == base
+        sibs = [a for a in Account.objects.all()
+                if a.code and len(a.code) == len(code) and a.code[:-2] == base
                 and a.code[-2:].isdigit() and int(a.code[-2:]) >= start]
         sibs.sort(key=lambda a: int(a.code[-2:]), reverse=True)   # highest first — no collisions
         for a in sibs:
